@@ -6,7 +6,7 @@ mkdir -p /trt-wheels
 
 if [[ "${TARGETARCH}" == "arm64" ]]; then
 
-  # NVIDIA supplies python-tensorrt for python3.10, but frigate uses python3.11,
+  # NVIDIA supplies python-tensorrt for python3.10, but frigate uses python3.12,
   # so we must build python-tensorrt ourselves.
 
   # Get python-tensorrt source
@@ -16,8 +16,8 @@ if [[ "${TARGETARCH}" == "arm64" ]]; then
 
   # Collect dependencies
   EXT_PATH=/workspace/external && mkdir -p $EXT_PATH
-  pip3 install pybind11 && ln -s /usr/local/lib/python3.11/dist-packages/pybind11 $EXT_PATH/pybind11
-  ln -s /usr/include/python3.11 $EXT_PATH/python3.11
+  pip3 install pybind11 && ln -s /usr/local/lib/python3.12/dist-packages/pybind11 $EXT_PATH/pybind11
+  ln -s /usr/include/python3.12 $EXT_PATH/python3.12
   ln -s /usr/include/aarch64-linux-gnu/NvOnnxParser.h /workspace/TensorRT/parsers/onnx/
 
   # Build wheel

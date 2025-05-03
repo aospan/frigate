@@ -7,6 +7,11 @@ SCRIPT_DIR="/usr/local/src/tensorrt_demos"
 # Clone tensorrt_demos repo
 git clone --depth 1 https://github.com/NateMeyer/tensorrt_demos.git -b conditional_download
 
+# no nvparsers
+sed -i 's/-lnvparsers //' ./tensorrt_demos/plugins/Makefile
+# numpy.product was deprecated in numpy 1.25, with this PR and removed in numpy 2.x.
+sed -i 's/np.product/np.prod/' ./tensorrt_demos/yolo/yolo_to_onnx.py
+
 # Build libyolo
 if [ ! -e /usr/local/cuda ]; then
     ln -s /usr/local/cuda-* /usr/local/cuda

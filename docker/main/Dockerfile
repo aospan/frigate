@@ -6,8 +6,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Globally set pip break-system-packages option to avoid having to specify it every time
 ARG PIP_BREAK_SYSTEM_PACKAGES=1
 
-ARG BASE_IMAGE=debian:12
-ARG SLIM_BASE=debian:12-slim
+ARG BASE_IMAGE=nvcr.io/nvidia/tensorrt:25.03-py3
+ARG SLIM_BASE=nvcr.io/nvidia/tensorrt:25.03-py3
 
 # A hook that allows us to inject commands right after the base images
 ARG BASE_HOOK=
@@ -18,7 +18,7 @@ ARG BASE_HOOK
 
 RUN sh -c "$BASE_HOOK"
 
-FROM --platform=${BUILDPLATFORM} debian:12 AS base_host
+FROM --platform=${BUILDPLATFORM} nvcr.io/nvidia/tensorrt:25.03-py3 AS base_host
 ARG PIP_BREAK_SYSTEM_PACKAGES
 
 FROM ${SLIM_BASE} AS slim-base
@@ -76,7 +76,7 @@ ARG DEBIAN_FRONTEND
 # Install OpenVino Runtime and Dev library
 COPY docker/main/requirements-ov.txt /requirements-ov.txt
 RUN apt-get -qq update \
-    && apt-get -qq install -y wget python3 python3-dev python3-distutils gcc pkg-config libhdf5-dev \
+    && apt-get -qq install -y wget python3 python3-dev gcc pkg-config libhdf5-dev \
     && wget -q https://bootstrap.pypa.io/get-pip.py -O get-pip.py \
     && sed -i 's/args.append("setuptools")/args.append("setuptools==77.0.3")/' get-pip.py \
     && python3 get-pip.py "pip" \
@@ -155,13 +155,13 @@ RUN apt-get -qq update \
     apt-transport-https wget \
     && apt-get -qq update \
     && apt-get -qq install -y \
-    python3.11 \
-    python3.11-dev \
+    python3.12 \
+    python3.12-dev \
     # opencv dependencies
     build-essential cmake git pkg-config libgtk-3-dev \
     libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
     libxvidcore-dev libx264-dev libjpeg-dev libpng-dev libtiff-dev \
-    gfortran openexr libatlas-base-dev libssl-dev\
+    gfortran openexr libssl-dev\
     libtbbmalloc2 libtbb-dev libdc1394-dev libopenexr-dev \
     libgstreamer-plugins-base1.0-dev libgstreamer1.0-dev \
     # sqlite3 dependencies
@@ -170,7 +170,7 @@ RUN apt-get -qq update \
     gcc gfortran libopenblas-dev liblapack-dev && \
     rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
 RUN wget -q https://bootstrap.pypa.io/get-pip.py -O get-pip.py \
     && sed -i 's/args.append("setuptools")/args.append("setuptools==77.0.3")/' get-pip.py \
@@ -186,9 +186,16 @@ RUN /build_pysqlite3.sh
 COPY docker/main/requirements-wheels.txt /requirements-wheels.txt
 RUN pip3 wheel --wheel-dir=/wheels -r /requirements-wheels.txt
 
+# Build tflite_runtime from sources
+RUN apt-get update && apt-get install -y git cmake build-essential python3-pybind11 pybind11-dev \
+    && git clone https://github.com/tensorflow/tensorflow.git tensorflow_src \
+    && cd tensorflow_src/ \
+    && PYTHON=python3 tensorflow/lite/tools/pip_package/build_pip_package_with_cmake.sh native \
+    && cp tensorflow/lite/tools/pip_package/gen/tflite_pip/python3/dist/*.whl /wheels/
+
 # Install HailoRT & Wheels
-RUN --mount=type=bind,source=docker/main/install_hailort.sh,target=/deps/install_hailort.sh \
-    /deps/install_hailort.sh
+# RUN --mount=type=bind,source=docker/main/install_hailort.sh,target=/deps/install_hailort.sh \
+#     /deps/install_hailort.sh
 
 # Collect deps in a single layer
 FROM scratch AS deps-rootfs
@@ -199,7 +206,7 @@ COPY --from=libusb-build /usr/local/lib /usr/local/lib
 COPY --from=tempio /rootfs/ /
 COPY --from=s6-overlay /rootfs/ /
 COPY --from=models /rootfs/ /
-COPY --from=wheels /rootfs/ /
+COPY --from=wheels / /
 COPY docker/main/rootfs/ /
 
 
@@ -236,9 +243,9 @@ RUN --mount=type=bind,source=docker/main/install_deps.sh,target=/deps/install_de
 ENV DEFAULT_FFMPEG_VERSION="7.0"
 ENV INCLUDED_FFMPEG_VERSIONS="${DEFAULT_FFMPEG_VERSION}:5.0"
 
-RUN wget -q https://bootstrap.pypa.io/get-pip.py -O get-pip.py \
-    && sed -i 's/args.append("setuptools")/args.append("setuptools==77.0.3")/' get-pip.py \
-    && python3 get-pip.py "pip"
+RUN apt-get update \
+    && apt-get install -y python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=bind,from=wheels,source=/wheels,target=/deps/wheels \
     pip3 install -U /deps/wheels/*.whl
