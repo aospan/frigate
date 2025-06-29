@@ -83,12 +83,20 @@
     "formattedTimestampFilename": {
       "12hour": "dd-MM-yy-h-mm-ss-a",
       "24hour": "dd-MM-yy-HH-mm-ss"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "d MMMM yyyy",
+      "24hour": "d MMMM yyyy"
     }
   },
   "unit": {
     "speed": {
       "mph": "mph",
       "kph": "km/h"
+    },
+    "length": {
+      "feet": "stopy",
+      "meters": "metry"
     }
   },
   "label": {
@@ -168,7 +176,9 @@
       "sk": "Slovenčina (Słowacki)",
       "vi": "Tiếng Việt (Wietnamski)",
       "ro": "Română (Rumuński)",
-      "fi": "Suomi (Fiński)"
+      "fi": "Suomi (Fiński)",
+      "yue": "粵語 (Kantoński)",
+      "th": "ไทย (Tajski)"
     },
     "appearance": "Wygląd",
     "darkMode": {
@@ -187,7 +197,8 @@
       "contrast": "Wysoki kontrast",
       "default": "Domyślny",
       "red": "Czerwony",
-      "nord": "Nordycki"
+      "nord": "Nordycki",
+      "highcontrast": "Wysoki kontrast"
     },
     "restart": "Uruchom ponownie Frigate",
     "live": {

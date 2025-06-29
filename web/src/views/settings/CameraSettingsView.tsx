@@ -31,6 +31,8 @@ import { Trans, useTranslation } from "react-i18next";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAlertsState, useDetectionsState, useEnabledState } from "@/api/ws";
+import { useDocDomain } from "@/hooks/use-doc-domain";
+import { getTranslatedLabel } from "@/utils/i18n";
 
 type CameraSettingsViewProps = {
   selectedCamera: string;
@@ -47,6 +49,7 @@ export default function CameraSettingsView({
   setUnsavedChanges,
 }: CameraSettingsViewProps) {
   const { t } = useTranslation(["views/settings"]);
+  const { getLocaleDocUrl } = useDocDomain();
 
   const { data: config, mutate: updateConfig } =
     useSWR<FrigateConfig>("config");
@@ -79,18 +82,18 @@ export default function CameraSettingsView({
   const alertsLabels = useMemo(() => {
     return cameraConfig?.review.alerts.labels
       ? cameraConfig.review.alerts.labels
-          .map((label) => t(label, { ns: "objects" }))
+          .map((label) => getTranslatedLabel(label))
           .join(", ")
       : "";
-  }, [cameraConfig, t]);
+  }, [cameraConfig]);
 
   const detectionsLabels = useMemo(() => {
     return cameraConfig?.review.detections.labels
       ? cameraConfig.review.detections.labels
-          .map((label) => t(label, { ns: "objects" }))
+          .map((label) => getTranslatedLabel(label))
           .join(", ")
       : "";
-  }, [cameraConfig, t]);
+  }, [cameraConfig]);
 
   // form
 
@@ -230,7 +233,9 @@ export default function CameraSettingsView({
     if (changedValue) {
       addMessage(
         "camera_settings",
-        `Unsaved review classification settings for ${capitalizeFirstLetter(selectedCamera)}`,
+        t("camera.reviewClassification.unsavedChanges", {
+          camera: selectedCamera,
+        }),
         undefined,
         `review_classification_settings_${selectedCamera}`,
       );
@@ -350,7 +355,7 @@ export default function CameraSettingsView({
               </p>
               <div className="flex items-center text-primary">
                 <Link
-                  to="https://docs.frigate.video/configuration/review"
+                  to={getLocaleDocUrl("configuration/review")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline"

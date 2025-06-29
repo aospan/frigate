@@ -152,7 +152,7 @@ Use this configuration for YOLO-based models. When no custom model path or URL i
 
 ```yaml
 detectors:
-  hailo8l:
+  hailo:
     type: hailo8l
     device: PCIe
 
@@ -185,7 +185,7 @@ For SSD-based models, provide either a model path or URL to your compiled SSD mo
 
 ```yaml
 detectors:
-  hailo8l:
+  hailo:
     type: hailo8l
     device: PCIe
 
@@ -209,7 +209,7 @@ The Hailo detector supports all YOLO models compiled for Hailo hardware that inc
 
 ```yaml
 detectors:
-  hailo8l:
+  hailo:
     type: hailo8l
     device: PCIe
 
@@ -498,6 +498,7 @@ detectors:
 
 model:
   path: /config/model_cache/tensorrt/yolov7-320.trt
+  labelmap_path: /labelmap/coco-80.txt
   input_tensor: nchw
   input_pixel_format: rgb
   width: 320
@@ -1024,7 +1025,7 @@ x.export()
 
 ### Downloading YOLO-NAS Model
 
-You can build and download a compatible model with pre-trained weights using [this notebook](https://github.com/blakeblackshear/frigate/blob/dev/notebooks/YOLO_NAS_Pretrained_Export.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/blakeblackshear/frigate/blob/dev/notebooks/YOLO_NAS_Pretrained_Export.ipynb).
+You can build and download a compatible model with pre-trained weights using [this notebook](https://github.com/blakeblackshear/frigate/blob/dev/notebooks/YOLO_NAS_Pretrained_Export.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/blakeblackshear/frigate/blob/dev/notebooks/YOLO_NAS_Pretrained_Export.ipynb) which can be run directly in [Google Colab](https://colab.research.google.com/github/blakeblackshear/frigate/blob/dev/notebooks/YOLO_NAS_Pretrained_Export.ipynb).
 
 :::warning
 
@@ -1053,13 +1054,14 @@ python3 yolo_to_onnx.py -m yolov7-320
 
 #### YOLOv9
 
-YOLOv9 models can be exported using the below code or they [can be downloaded from hugging face](https://huggingface.co/Xenova/yolov9-onnx/tree/main)
+YOLOv9 models can be exported using the below code
 
 ```sh
 git clone https://github.com/WongKinYiu/yolov9
 cd yolov9
 
 # setup the virtual environment so installation doesn't affect main system
+# NOTE: Virtual environment must be using Python 3.11 or older.
 python3 -m venv ./
 bin/pip install -r requirements.txt
 bin/pip install onnx onnxruntime onnx-simplifier>=0.4.1
@@ -1069,5 +1071,5 @@ wget -O yolov9-t.pt "https://github.com/WongKinYiu/yolov9/releases/download/v0.1
 
 # prepare and run export script
 sed -i "s/ckpt = torch.load(attempt_download(w), map_location='cpu')/ckpt = torch.load(attempt_download(w), map_location='cpu', weights_only=False)/g" ./models/experimental.py
-python3 export.py --weights ./yolov9-t.pt --imgsz 320 --simplify --include onnx
+bin/python3 export.py --weights ./yolov9-t.pt --imgsz 320 --simplify --include onnx
 ```

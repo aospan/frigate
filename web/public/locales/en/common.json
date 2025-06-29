@@ -60,6 +60,10 @@
       "12hour": "MMM d, h:mm aaa",
       "24hour": "MMM d, HH:mm"
     },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "MMM d, yyyy",
+      "24hour": "MMM d, yyyy"
+    },
     "formattedTimestampMonthDayYearHourMinute": {
       "12hour": "MMM d yyyy, h:mm aaa",
       "24hour": "MMM d yyyy, HH:mm"
@@ -74,6 +78,10 @@
     "speed": {
       "mph": "mph",
       "kph": "kph"
+    },
+    "length": {
+      "feet": "feet",
+      "meters": "meters"
     }
   },
   "label": {
@@ -154,6 +162,8 @@
       "da": "Dansk (Danish)",
       "sk": "Slovenčina (Slovak)",
       "yue": "粵語 (Cantonese)",
+      "th": "ไทย (Thai)",
+      "ca": "Català (Catalan)",
       "withSystem": {
         "label": "Use the system settings for language"
       }

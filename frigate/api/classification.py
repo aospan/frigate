@@ -1,10 +1,10 @@
 """Object classification APIs."""
 
+import datetime
 import logging
 import os
-import random
 import shutil
-import string
+from typing import Any
 
 import cv2
 from fastapi import APIRouter, Depends, Request, UploadFile
@@ -59,7 +59,7 @@ def reclassify_face(request: Request, body: dict = None):
             content={"message": "Face recognition is not enabled.", "success": False},
         )
 
-    json: dict[str, any] = body or {}
+    json: dict[str, Any] = body or {}
     training_file = os.path.join(
         FACE_DIR, f"train/{sanitize_filename(json.get('training_file', ''))}"
     )
@@ -92,7 +92,7 @@ def train_face(request: Request, name: str, body: dict = None):
             content={"message": "Face recognition is not enabled.", "success": False},
         )
 
-    json: dict[str, any] = body or {}
+    json: dict[str, Any] = body or {}
     training_file_name = sanitize_filename(json.get("training_file", ""))
     training_file = os.path.join(FACE_DIR, f"train/{training_file_name}")
     event_id = json.get("event_id")
@@ -120,8 +120,7 @@ def train_face(request: Request, name: str, body: dict = None):
         )
 
     sanitized_name = sanitize_filename(name)
-    rand_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
-    new_name = f"{sanitized_name}-{rand_id}.webp"
+    new_name = f"{sanitized_name}-{datetime.datetime.now().timestamp()}.webp"
     new_file_folder = os.path.join(FACE_DIR, f"{sanitized_name}")
 
     if not os.path.exists(new_file_folder):
@@ -155,7 +154,25 @@ def train_face(request: Request, name: str, body: dict = None):
         x2 = x1 + int(face_box[2] * detect_config.width) - 4
         y2 = y1 + int(face_box[3] * detect_config.height) - 4
         face = snapshot[y1:y2, x1:x2]
-        cv2.imwrite(os.path.join(new_file_folder, new_name), face)
+        success = True
+
+        if face.size > 0:
+            try:
+                cv2.imwrite(os.path.join(new_file_folder, new_name), face)
+                success = True
+            except Exception:
+                pass
+
+        if not success:
+            return JSONResponse(
+                content=(
+                    {
+                        "success": False,
+                        "message": "Invalid face box or no face exists",
+                    }
+                ),
+                status_code=404,
+            )
 
     context: EmbeddingsContext = request.app.embeddings
     context.clear_face_classifier()
@@ -248,7 +265,7 @@ def deregister_faces(request: Request, name: str, body: dict = None):
             content={"message": "Face recognition is not enabled.", "success": False},
         )
 
-    json: dict[str, any] = body or {}
+    json: dict[str, Any] = body or {}
     list_of_ids = json.get("ids", "")
 
     context: EmbeddingsContext = request.app.embeddings

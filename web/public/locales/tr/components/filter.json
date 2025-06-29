@@ -13,7 +13,8 @@
     "all": {
       "title": "Tüm Tarihler",
       "short": "Tarihler"
-    }
+    },
+    "selectPreset": "Ön ayar seçin…"
   },
   "sort": {
     "label": "Sırala",
@@ -111,7 +112,7 @@
   },
   "recognizedLicensePlates": {
     "selectPlatesFromList": "Listeden bir veya birden fazla plaka seçin.",
-    "placeholder": "Plaka ara...",
+    "placeholder": "Plaka ara…",
     "loading": "Tanınan plakalar yükleniyor…",
     "title": "Tanınan Plakalar",
     "noLicensePlatesFound": "Plaka bulunamadı.",

@@ -10,7 +10,7 @@ import random
 import re
 import string
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -25,7 +25,7 @@ from frigate.comms.event_metadata_updater import (
 from frigate.const import CLIPS_DIR
 from frigate.embeddings.onnx.lpr_embedding import LPR_EMBEDDING_SIZE
 from frigate.types import TrackedObjectUpdateTypesEnum
-from frigate.util.builtin import EventsPerSecond
+from frigate.util.builtin import EventsPerSecond, InferenceSpeed
 from frigate.util.image import area
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,10 @@ WRITE_DEBUG_IMAGES = False
 class LicensePlateProcessingMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.plate_rec_speed = InferenceSpeed(self.metrics.alpr_speed)
         self.plates_rec_second = EventsPerSecond()
         self.plates_rec_second.start()
+        self.plate_det_speed = InferenceSpeed(self.metrics.yolov9_lpr_speed)
         self.plates_det_second = EventsPerSecond()
         self.plates_det_second.start()
         self.event_metadata_publisher = EventMetadataPublisher()
@@ -79,7 +81,12 @@ class LicensePlateProcessingMixin:
                 resized_image,
             )
 
-        outputs = self.model_runner.detection_model([normalized_image])[0]
+        try:
+            outputs = self.model_runner.detection_model([normalized_image])[0]
+        except Exception as e:
+            logger.warning(f"Error running LPR box detection model: {e}")
+            return []
+
         outputs = outputs[0, :, :]
 
         if False:
@@ -115,7 +122,11 @@ class LicensePlateProcessingMixin:
                 norm_img = norm_img[np.newaxis, :]
                 norm_images.append(norm_img)
 
-        outputs = self.model_runner.classification_model(norm_images)
+        try:
+            outputs = self.model_runner.classification_model(norm_images)
+        except Exception as e:
+            logger.warning(f"Error running LPR classification model: {e}")
+            return
 
         return self._process_classification_output(images, outputs)
 
@@ -152,7 +163,12 @@ class LicensePlateProcessingMixin:
                 norm_image = norm_image[np.newaxis, :]
                 norm_images.append(norm_image)
 
-        outputs = self.model_runner.recognition_model(norm_images)
+        try:
+            outputs = self.model_runner.recognition_model(norm_images)
+        except Exception as e:
+            logger.warning(f"Error running LPR recognition model: {e}")
+            return [], []
+
         return self.ctc_decoder(outputs)
 
     def _process_license_plate(
@@ -968,7 +984,11 @@ class LicensePlateProcessingMixin:
 
         Return the dimensions of the detected plate as [x1, y1, x2, y2].
         """
-        predictions = self.model_runner.yolov9_detection_model(input)
+        try:
+            predictions = self.model_runner.yolov9_detection_model(input)
+        except Exception as e:
+            logger.warning(f"Error running YOLOv9 license plate detection model: {e}")
+            return None
 
         confidence_threshold = self.lpr_config.detection_threshold
 
@@ -1141,22 +1161,6 @@ class LicensePlateProcessingMixin:
         # 5. Return True if previous plate scores higher
         return prev_score > curr_score
 
-    def __update_yolov9_metrics(self, duration: float) -> None:
-        """
-        Update inference metrics.
-        """
-        self.metrics.yolov9_lpr_speed.value = (
-            self.metrics.yolov9_lpr_speed.value * 9 + duration
-        ) / 10
-
-    def __update_lpr_metrics(self, duration: float) -> None:
-        """
-        Update inference metrics.
-        """
-        self.metrics.alpr_speed.value = (
-            self.metrics.alpr_speed.value * 9 + duration
-        ) / 10
-
     def _generate_plate_event(self, camera: str, plate: str, plate_score: float) -> str:
         """Generate a unique ID for a plate event based on camera and text."""
         now = datetime.datetime.now().timestamp()
@@ -1179,7 +1183,7 @@ class LicensePlateProcessingMixin:
         return event_id
 
     def lpr_process(
-        self, obj_data: dict[str, any], frame: np.ndarray, dedicated_lpr: bool = False
+        self, obj_data: dict[str, Any], frame: np.ndarray, dedicated_lpr: bool = False
     ):
         """Look for license plates in image."""
         self.metrics.alpr_pps.value = self.plates_rec_second.eps()
@@ -1212,7 +1216,7 @@ class LicensePlateProcessingMixin:
                 f"{camera}: YOLOv9 LPD inference time: {(datetime.datetime.now().timestamp() - yolov9_start) * 1000:.2f} ms"
             )
             self.plates_det_second.update()
-            self.__update_yolov9_metrics(
+            self.plate_det_speed.update(
                 datetime.datetime.now().timestamp() - yolov9_start
             )
 
@@ -1270,7 +1274,7 @@ class LicensePlateProcessingMixin:
                 )
                 return
 
-            license_plate: Optional[dict[str, any]] = None
+            license_plate: Optional[dict[str, Any]] = None
 
             if "license_plate" not in self.config.cameras[camera].objects.track:
                 logger.debug(f"{camera}: Running manual license_plate detection.")
@@ -1281,6 +1285,10 @@ class LicensePlateProcessingMixin:
                     return
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+
+                # apply motion mask
+                rgb[self.config.cameras[camera].motion.mask == 0] = [0, 0, 0]
+
                 left, top, right, bottom = car_box
                 car = rgb[top:bottom, left:right]
 
@@ -1299,7 +1307,7 @@ class LicensePlateProcessingMixin:
                     f"{camera}: YOLOv9 LPD inference time: {(datetime.datetime.now().timestamp() - yolov9_start) * 1000:.2f} ms"
                 )
                 self.plates_det_second.update()
-                self.__update_yolov9_metrics(
+                self.plate_det_speed.update(
                     datetime.datetime.now().timestamp() - yolov9_start
                 )
 
@@ -1335,7 +1343,7 @@ class LicensePlateProcessingMixin:
                     return
 
                 if obj_data.get("label") in ["car", "motorcycle"]:
-                    attributes: list[dict[str, any]] = obj_data.get(
+                    attributes: list[dict[str, Any]] = obj_data.get(
                         "current_attributes", []
                     )
                     for attr in attributes:
@@ -1413,7 +1421,7 @@ class LicensePlateProcessingMixin:
             camera, id, license_plate_frame
         )
         self.plates_rec_second.update()
-        self.__update_lpr_metrics(datetime.datetime.now().timestamp() - start)
+        self.plate_rec_speed.update(datetime.datetime.now().timestamp() - start)
 
         if license_plates:
             for plate, confidence, text_area in zip(license_plates, confidences, areas):
@@ -1492,18 +1500,24 @@ class LicensePlateProcessingMixin:
 
         # Determine subLabel based on known plates, use regex matching
         # Default to the detected plate, use label name if there's a match
-        sub_label = next(
-            (
-                label
-                for label, plates in self.lpr_config.known_plates.items()
-                if any(
-                    re.match(f"^{plate}$", top_plate)
-                    or distance(plate, top_plate) <= self.lpr_config.match_distance
-                    for plate in plates
-                )
-            ),
-            None,
-        )
+        try:
+            sub_label = next(
+                (
+                    label
+                    for label, plates in self.lpr_config.known_plates.items()
+                    if any(
+                        re.match(f"^{plate}$", top_plate)
+                        or distance(plate, top_plate) <= self.lpr_config.match_distance
+                        for plate in plates
+                    )
+                ),
+                None,
+            )
+        except re.error:
+            logger.error(
+                f"{camera}: Invalid regex in known plates configuration: {self.lpr_config.known_plates}"
+            )
+            sub_label = None
 
         # If it's a known plate, publish to sub_label
         if sub_label is not None:
@@ -1546,6 +1560,12 @@ class LicensePlateProcessingMixin:
                 (base64.b64encode(encoded_img).decode("ASCII"), id, camera),
             )
 
+        if id not in self.detected_license_plates:
+            if camera not in self.camera_current_cars:
+                self.camera_current_cars[camera] = []
+
+            self.camera_current_cars[camera].append(id)
+
         self.detected_license_plates[id] = {
             "plate": top_plate,
             "char_confidences": top_char_confidences,
@@ -1555,12 +1575,15 @@ class LicensePlateProcessingMixin:
             "last_seen": current_time if dedicated_lpr else None,
         }
 
-    def handle_request(self, topic, request_data) -> dict[str, any] | None:
+    def handle_request(self, topic, request_data) -> dict[str, Any] | None:
         return
 
-    def expire_object(self, object_id: str):
+    def lpr_expire(self, object_id: str, camera: str):
         if object_id in self.detected_license_plates:
             self.detected_license_plates.pop(object_id)
+
+            if object_id in self.camera_current_cars.get(camera, []):
+                self.camera_current_cars[camera].remove(object_id)
 
 
 class CTCDecoder:

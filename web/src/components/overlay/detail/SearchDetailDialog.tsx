@@ -48,7 +48,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ReviewSegment } from "@/types/review";
+import { REVIEW_PADDING, ReviewSegment } from "@/types/review";
 import { useNavigate } from "react-router-dom";
 import Chip from "@/components/indicators/Chip";
 import { capitalizeAll } from "@/utils/stringUtil";
@@ -77,6 +77,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { TbFaceId } from "react-icons/tb";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import FaceSelectionDialog from "../FaceSelectionDialog";
+import { getTranslatedLabel } from "@/utils/i18n";
 
 const SEARCH_TABS = [
   "details",
@@ -717,11 +718,9 @@ function ObjectDetailsTab({
             <div className="text-sm text-primary/40">{t("details.label")}</div>
             <div className="flex flex-row items-center gap-2 text-sm smart-capitalize">
               {getIconForLabel(search.label, "size-4 text-primary")}
-              {t(search.label, {
-                ns: "objects",
-              })}
+              {getTranslatedLabel(search.label)}
               {search.sub_label && ` (${search.sub_label})`}
-              {isAdmin && (
+              {isAdmin && search.end_time && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span>
@@ -864,16 +863,14 @@ function ObjectDetailsTab({
             className={cn("flex w-full flex-row gap-2", isMobile && "flex-col")}
           >
             {config?.semantic_search.enabled &&
+              setSimilarity != undefined &&
               search.data.type == "object" && (
                 <Button
                   className="w-full"
                   aria-label={t("itemMenu.findSimilar.aria")}
                   onClick={() => {
                     setSearch(undefined);
-
-                    if (setSimilarity) {
-                      setSimilarity();
-                    }
+                    setSimilarity();
                   }}
                 >
                   <div className="flex gap-1">
@@ -911,7 +908,9 @@ function ObjectDetailsTab({
             search.label,
           )) ? (
           <>
-            <div className="text-sm text-primary/40">Description</div>
+            <div className="text-sm text-primary/40">
+              {t("details.description.label")}
+            </div>
             <div className="flex h-64 flex-col items-center justify-center gap-3 border p-4 text-sm text-primary/40">
               <div className="flex">
                 <ActivityIndicator />
@@ -1101,7 +1100,7 @@ export function ObjectSnapshotTab({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <a
-                          href={`${baseUrl}api/events/${search?.id}/snapshot.jpg`}
+                          href={`${baseUrl}api/events/${search?.id}/snapshot.jpg?bbox=1`}
                           download={`${search?.camera}_${search?.label}.jpg`}
                         >
                           <Chip className="cursor-pointer rounded-md bg-gray-500 bg-gradient-to-br from-gray-400 to-gray-500">
@@ -1167,8 +1166,8 @@ export function ObjectSnapshotTab({
                                 ns="components/dialog"
                                 values={{
                                   untranslatedLabel: search?.label,
-                                  translatedLabel: t(
-                                    "filter.label." + search?.label,
+                                  translatedLabel: getTranslatedLabel(
+                                    search?.label,
                                   ),
                                 }}
                               >
@@ -1229,46 +1228,54 @@ export function VideoTab({ search }: VideoTabProps) {
   const { data: reviewItem } = useSWR<ReviewSegment>([
     `review/event/${search.id}`,
   ]);
-  const endTime = useMemo(() => search.end_time ?? Date.now() / 1000, [search]);
 
-  const source = `${baseUrl}vod/${search.camera}/start/${search.start_time}/end/${endTime}/index.m3u8`;
+  const clipTimeRange = useMemo(() => {
+    const startTime = search.start_time - REVIEW_PADDING;
+    const endTime = (search.end_time ?? Date.now() / 1000) + REVIEW_PADDING;
+    return `start/${startTime}/end/${endTime}`;
+  }, [search]);
+
+  const source = `${baseUrl}vod/${search.camera}/${clipTimeRange}/index.m3u8`;
 
   return (
-    <GenericVideoPlayer source={source}>
-      {reviewItem && (
+    <>
+      <span tabIndex={0} className="sr-only" />
+      <GenericVideoPlayer source={source}>
         <div
           className={cn(
             "absolute top-2 z-10 flex items-center gap-2",
             isIOS ? "right-8" : "right-2",
           )}
         >
-          <Tooltip>
-            <TooltipTrigger>
-              <Chip
-                className="cursor-pointer rounded-md bg-gray-500 bg-gradient-to-br from-gray-400 to-gray-500"
-                onClick={() => {
-                  if (reviewItem?.id) {
-                    const params = new URLSearchParams({
-                      id: reviewItem.id,
-                    }).toString();
-                    navigate(`/review?${params}`);
-                  }
-                }}
-              >
-                <FaHistory className="size-4 text-white" />
-              </Chip>
-            </TooltipTrigger>
-            <TooltipPortal>
-              <TooltipContent>
-                {t("itemMenu.viewInHistory.label")}
-              </TooltipContent>
-            </TooltipPortal>
-          </Tooltip>
+          {reviewItem && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Chip
+                  className="cursor-pointer rounded-md bg-gray-500 bg-gradient-to-br from-gray-400 to-gray-500"
+                  onClick={() => {
+                    if (reviewItem?.id) {
+                      const params = new URLSearchParams({
+                        id: reviewItem.id,
+                      }).toString();
+                      navigate(`/review?${params}`);
+                    }
+                  }}
+                >
+                  <FaHistory className="size-4 text-white" />
+                </Chip>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent>
+                  {t("itemMenu.viewInHistory.label")}
+                </TooltipContent>
+              </TooltipPortal>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <a
                 download
-                href={`${baseUrl}api/${search.camera}/start/${search.start_time}/end/${endTime}/clip.mp4`}
+                href={`${baseUrl}api/${search.camera}/${clipTimeRange}/clip.mp4`}
               >
                 <Chip className="cursor-pointer rounded-md bg-gray-500 bg-gradient-to-br from-gray-400 to-gray-500">
                   <FaDownload className="size-4 text-white" />
@@ -1282,7 +1289,7 @@ export function VideoTab({ search }: VideoTabProps) {
             </TooltipPortal>
           </Tooltip>
         </div>
-      )}
-    </GenericVideoPlayer>
+      </GenericVideoPlayer>
+    </>
   );
 }

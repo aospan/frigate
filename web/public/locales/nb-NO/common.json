@@ -77,7 +77,11 @@
       "12hour": "d. MMM yyyy, h:mm aaa",
       "24hour": "d. MMM yyyy, HH:mm"
     },
-    "formattedTimestampMonthDay": "d. MMM"
+    "formattedTimestampMonthDay": "d. MMM",
+    "formattedTimestampMonthDayYear": {
+      "24hour": "d. MMM, yyyy",
+      "12hour": "d. MMM, yyyy"
+    }
   },
   "button": {
     "copy": "Kopier",
@@ -183,7 +187,10 @@
       "da": "Dansk (Dansk)",
       "sk": "Slovenčina (Slovensk)",
       "pl": "Polski (Polsk)",
-      "uk": "Українська (Ukrainiansk)"
+      "uk": "Українська (Ukrainsk)",
+      "yue": "粵語 (Kantonesisk)",
+      "th": "ไทย (Thai)",
+      "ca": "Català (Katalansk)"
     },
     "appearance": "Utseende",
     "darkMode": {
@@ -202,7 +209,8 @@
       "nord": "Nord",
       "red": "Rød",
       "contrast": "Høy kontrast",
-      "default": "Standard"
+      "default": "Standard",
+      "highcontrast": "Høy kontrast"
     }
   },
   "pagination": {
@@ -221,6 +229,10 @@
     "speed": {
       "mph": "mph",
       "kph": "km/t"
+    },
+    "length": {
+      "meters": "meter",
+      "feet": "fot"
     }
   },
   "label": {
@@ -240,7 +252,7 @@
     "title": "Rolle",
     "admin": "Administrator",
     "viewer": "Visningsbruker",
-    "desc": "Administratorer har full tilgang til alle funksjoner i Frigate brukergrensesnitt. Visningsbrukere er begrenset til å se kameraer, inspisere elementer og historisk opptak i brukergrensesnittet."
+    "desc": "Administratorer har full tilgang til alle funksjoner i Frigate brukergrensesnittet. Visningsbrukere er begrenset til å se kameraer, inspisere elementer og se historiske opptak."
   },
   "accessDenied": {
     "documentTitle": "Ingen tilgang – Frigate",

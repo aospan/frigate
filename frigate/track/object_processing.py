@@ -7,10 +7,11 @@ import threading
 from collections import defaultdict
 from enum import Enum
 from multiprocessing.synchronize import Event as MpEvent
+from typing import Any
 
 import cv2
 import numpy as np
-from peewee import DoesNotExist
+from peewee import SQL, DoesNotExist
 
 from frigate.camera.state import CameraState
 from frigate.comms.config_updater import ConfigSubscriber
@@ -28,9 +29,13 @@ from frigate.config import (
     RecordConfig,
     SnapshotsConfig,
 )
-from frigate.const import FAST_QUEUE_TIMEOUT, UPDATE_CAMERA_ACTIVITY
+from frigate.const import (
+    FAST_QUEUE_TIMEOUT,
+    UPDATE_CAMERA_ACTIVITY,
+    UPSERT_REVIEW_SEGMENT,
+)
 from frigate.events.types import EventStateEnum, EventTypeEnum
-from frigate.models import Event, Timeline
+from frigate.models import Event, ReviewSegment, Timeline
 from frigate.track.tracked_object import TrackedObject
 from frigate.util.image import SharedMemoryFrameManager
 
@@ -70,7 +75,7 @@ class TrackedObjectProcessor(threading.Thread):
         self.event_end_subscriber = EventEndSubscriber()
         self.sub_label_subscriber = EventMetadataSubscriber(EventMetadataTypeEnum.all)
 
-        self.camera_activity: dict[str, dict[str, any]] = {}
+        self.camera_activity: dict[str, dict[str, Any]] = {}
         self.ongoing_manual_events: dict[str, str] = {}
 
         # {
@@ -151,7 +156,7 @@ class TrackedObjectProcessor(threading.Thread):
                 )
             )
 
-        def snapshot(camera, obj: TrackedObject, frame_name: str):
+        def snapshot(camera: str, obj: TrackedObject) -> bool:
             mqtt_config: CameraMqttConfig = self.config.cameras[camera].mqtt
             if mqtt_config.enabled and self.should_mqtt_snapshot(camera, obj):
                 jpg_bytes = obj.get_img_bytes(
@@ -183,6 +188,10 @@ class TrackedObjectProcessor(threading.Thread):
                                 jpg_bytes,
                                 retain=True,
                             )
+
+                    return True
+
+            return False
 
         def camera_activity(camera, activity):
             last_activity = self.camera_activity.get(camera)
@@ -248,7 +257,7 @@ class TrackedObjectProcessor(threading.Thread):
 
     def should_mqtt_snapshot(self, camera, obj: TrackedObject):
         # object never changed position
-        if obj.obj_data["position_changes"] == 0:
+        if obj.is_stationary():
             return False
 
         # if there are required zones and there is no overlap
@@ -301,7 +310,7 @@ class TrackedObjectProcessor(threading.Thread):
             return {}
 
     def get_current_frame(
-        self, camera: str, draw_options: dict[str, any] = {}
+        self, camera: str, draw_options: dict[str, Any] = {}
     ) -> np.ndarray | None:
         if camera == "birdseye":
             return self.frame_manager.get(
@@ -355,6 +364,60 @@ class TrackedObjectProcessor(threading.Thread):
             Timeline.update(
                 data=Timeline.data.update({"sub_label": (sub_label, score)})
             ).where(Timeline.source_id == event_id).execute()
+
+            # only update ended review segments
+            # manually updating a sub_label from the UI is only possible for ended tracked objects
+            try:
+                review_segment = ReviewSegment.get(
+                    (
+                        SQL(
+                            "json_extract(data, '$.detections') LIKE ?",
+                            [f'%"{event_id}"%'],
+                        )
+                    )
+                    & (ReviewSegment.end_time.is_null(False))
+                )
+
+                segment_data = review_segment.data
+                detection_ids = segment_data.get("detections", [])
+
+                # Rebuild objects list and sync sub_labels
+                objects_list = []
+                sub_labels = set()
+                events = Event.select(Event.id, Event.label, Event.sub_label).where(
+                    Event.id.in_(detection_ids)
+                )
+                for det_event in events:
+                    if det_event.sub_label:
+                        sub_labels.add(det_event.sub_label)
+                        objects_list.append(
+                            f"{det_event.label}-verified"
+                        )  # eg, "bird-verified"
+                    else:
+                        objects_list.append(det_event.label)  # eg, "bird"
+
+                segment_data["sub_labels"] = list(sub_labels)
+                segment_data["objects"] = objects_list
+
+                updated_data = {
+                    ReviewSegment.id.name: review_segment.id,
+                    ReviewSegment.camera.name: review_segment.camera,
+                    ReviewSegment.start_time.name: review_segment.start_time,
+                    ReviewSegment.end_time.name: review_segment.end_time,
+                    ReviewSegment.severity.name: review_segment.severity,
+                    ReviewSegment.thumb_path.name: review_segment.thumb_path,
+                    ReviewSegment.data.name: segment_data,
+                }
+
+                self.requestor.send_data(UPSERT_REVIEW_SEGMENT, updated_data)
+                logger.debug(
+                    f"Updated sub_label for event {event_id} in review segment {review_segment.id}"
+                )
+
+            except ReviewSegment.DoesNotExist:
+                logger.debug(
+                    f"No review segment found with event ID {event_id} when updating sub_label"
+                )
 
         return True
 

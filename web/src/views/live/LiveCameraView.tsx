@@ -119,6 +119,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { Trans, useTranslation } from "react-i18next";
+import { useDocDomain } from "@/hooks/use-doc-domain";
 
 type LiveCameraViewProps = {
   config?: FrigateConfig;
@@ -531,11 +532,9 @@ export default function LiveCameraView({
                   Icon={mic ? FaMicrophone : FaMicrophoneSlash}
                   isActive={mic}
                   title={
-                    (mic
-                      ? t("button.disable", { ns: "common" })
-                      : t("button.enable", { ns: "common" })) +
-                    " " +
-                    t("button.twoWayTalk", { ns: "common" })
+                    mic
+                      ? t("twoWayTalk.disable", { ns: "views/live" })
+                      : t("twoWayTalk.enable", { ns: "views/live" })
                   }
                   onClick={() => {
                     setMic(!mic);
@@ -553,11 +552,9 @@ export default function LiveCameraView({
                   Icon={audio ? GiSpeaker : GiSpeakerOff}
                   isActive={audio ?? false}
                   title={
-                    (audio
-                      ? t("button.disable", { ns: "common" })
-                      : t("button.enable", { ns: "common" })) +
-                    " " +
-                    t("button.cameraAudio", { ns: "common" })
+                    audio
+                      ? t("cameraAudio.disable", { ns: "views/live" })
+                      : t("cameraAudio.enable", { ns: "views/live" })
                   }
                   onClick={() => setAudio(!audio)}
                   disabled={!cameraEnabled}
@@ -635,6 +632,7 @@ export default function LiveCameraView({
         <div className="flex flex-col items-center justify-center">
           <PtzControlPanel
             camera={camera.name}
+            enabled={cameraEnabled}
             clickOverlay={clickOverlay}
             setClickOverlay={setClickOverlay}
           />
@@ -693,15 +691,19 @@ function TooltipButton({
 
 function PtzControlPanel({
   camera,
+  enabled,
   clickOverlay,
   setClickOverlay,
 }: {
   camera: string;
+  enabled: boolean;
   clickOverlay: boolean;
   setClickOverlay: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { t } = useTranslation(["views/live"]);
-  const { data: ptz } = useSWR<CameraPtzInfo>(`${camera}/ptz/info`);
+  const { data: ptz } = useSWR<CameraPtzInfo>(
+    enabled ? `${camera}/ptz/info` : null,
+  );
 
   const { send: sendPtz } = usePtzCommand(camera);
 
@@ -1016,6 +1018,7 @@ function FrigateCameraFeatures({
   cameraEnabled,
 }: FrigateCameraFeaturesProps) {
   const { t } = useTranslation(["views/live", "components/dialog"]);
+  const { getLocaleDocUrl } = useDocDomain();
 
   const { payload: detectState, send: sendDetect } = useDetectState(
     camera.name,
@@ -1270,7 +1273,7 @@ function FrigateCameraFeatures({
                         })}
                         <div className="mt-2 flex items-center text-primary">
                           <Link
-                            to="https://docs.frigate.video/configuration/live"
+                            to={getLocaleDocUrl("configuration/live")}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline"
@@ -1348,7 +1351,7 @@ function FrigateCameraFeatures({
                                 {t("stream.audio.tips.title")}
                                 <div className="mt-2 flex items-center text-primary">
                                   <Link
-                                    to="https://docs.frigate.video/configuration/live"
+                                    to={getLocaleDocUrl("configuration/live")}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline"
@@ -1389,7 +1392,9 @@ function FrigateCameraFeatures({
                                   {t("stream.twoWayTalk.tips")}
                                   <div className="mt-2 flex items-center text-primary">
                                     <Link
-                                      to="https://docs.frigate.video/configuration/live/#webrtc-extra-configuration"
+                                      to={getLocaleDocUrl(
+                                        "configuration/live/#webrtc-extra-configuration",
+                                      )}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="inline"
@@ -1573,7 +1578,7 @@ function FrigateCameraFeatures({
         <div className="mt-3 flex flex-col gap-5">
           {!isRestreamed && (
             <div className="flex flex-col gap-2 p-2">
-              <Label>{t("streaming.title", { ns: "components/dialog" })}</Label>
+              <Label>{t("stream.title")}</Label>
               <div className="flex flex-row items-center gap-1 text-sm text-muted-foreground">
                 <LuX className="size-4 text-danger" />
                 <div>
@@ -1591,17 +1596,17 @@ function FrigateCameraFeatures({
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-80 text-xs">
-                    {t("streaming.restreaming.desc", {
+                    {t("streaming.restreaming.desc.title", {
                       ns: "components/dialog",
                     })}
                     <div className="mt-2 flex items-center text-primary">
                       <Link
-                        to="https://docs.frigate.video/configuration/live"
+                        to={getLocaleDocUrl("configuration/live")}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline"
                       >
-                        {t("streaming.restreaming.readTheDocumentation", {
+                        {t("streaming.restreaming.desc.readTheDocumentation", {
                           ns: "components/dialog",
                         })}
                         <LuExternalLink className="ml-2 inline-flex size-3" />
@@ -1667,7 +1672,7 @@ function FrigateCameraFeatures({
                           {t("stream.audio.tips.title")}
                           <div className="mt-2 flex items-center text-primary">
                             <Link
-                              to="https://docs.frigate.video/configuration/live"
+                              to={getLocaleDocUrl("configuration/live")}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline"
@@ -1708,7 +1713,9 @@ function FrigateCameraFeatures({
                             {t("stream.twoWayTalk.tips")}
                             <div className="mt-2 flex items-center text-primary">
                               <Link
-                                to="https://docs.frigate.video/configuration/live/#webrtc-extra-configuration"
+                                to={getLocaleDocUrl(
+                                  "configuration/live/#webrtc-extra-configuration",
+                                )}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline"

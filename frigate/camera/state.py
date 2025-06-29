@@ -172,6 +172,7 @@ class CameraState:
                 # draw any attributes
                 for attribute in obj["current_attributes"]:
                     box = attribute["box"]
+                    box_area = int((box[2] - box[0]) * (box[3] - box[1]))
                     draw_box_with_label(
                         frame_copy,
                         box[0],
@@ -179,7 +180,7 @@ class CameraState:
                         box[2],
                         box[3],
                         attribute["label"],
-                        f"{attribute['score']:.0%}",
+                        f"{attribute['score']:.0%} {str(box_area)}",
                         thickness=thickness,
                         color=color,
                     )
@@ -239,7 +240,7 @@ class CameraState:
         self,
         frame_name: str,
         frame_time: float,
-        current_detections: dict[str, dict[str, any]],
+        current_detections: dict[str, dict[str, Any]],
         motion_boxes: list[tuple[int, int, int, int]],
         regions: list[tuple[int, int, int, int]],
     ):
@@ -255,6 +256,7 @@ class CameraState:
         updated_ids = current_ids.intersection(previous_ids)
 
         for id in new_ids:
+            logger.debug(f"{self.name}: New tracked object ID: {id}")
             new_obj = tracked_objects[id] = TrackedObject(
                 self.config.model,
                 self.camera_config,
@@ -264,7 +266,13 @@ class CameraState:
             )
 
             # add initial frame to frame cache
-            self.frame_cache[frame_time] = np.copy(current_frame)
+            logger.debug(
+                f"{self.name}: New object, adding {frame_time} to frame cache for {id}"
+            )
+            self.frame_cache[frame_time] = {
+                "frame": np.copy(current_frame),
+                "object_id": id,
+            }
 
             # save initial thumbnail data and best object
             thumbnail_data = {
@@ -282,9 +290,11 @@ class CameraState:
             }
             new_obj.thumbnail_data = thumbnail_data
             tracked_objects[id].thumbnail_data = thumbnail_data
-            self.best_objects[new_obj.obj_data["label"]] = new_obj
+            object_type = new_obj.obj_data["label"]
 
             # call event handlers
+            self.send_mqtt_snapshot(new_obj, object_type)
+
             for c in self.callbacks["start"]:
                 c(self.name, new_obj, frame_name)
 
@@ -306,7 +316,13 @@ class CameraState:
                     updated_obj.thumbnail_data["frame_time"] == frame_time
                     and frame_time not in self.frame_cache
                 ):
-                    self.frame_cache[frame_time] = np.copy(current_frame)
+                    logger.debug(
+                        f"{self.name}: Existing object, adding {frame_time} to frame cache for {id}"
+                    )
+                    self.frame_cache[frame_time] = {
+                        "frame": np.copy(current_frame),
+                        "object_id": id,
+                    }
 
                 updated_obj.last_updated = frame_time
 
@@ -332,12 +348,13 @@ class CameraState:
             removed_obj = tracked_objects[id]
             if "end_time" not in removed_obj.obj_data:
                 removed_obj.obj_data["end_time"] = frame_time
+                logger.debug(f"{self.name}: end callback for object {id}")
                 for c in self.callbacks["end"]:
                     c(self.name, removed_obj, frame_name)
 
         # TODO: can i switch to looking this up and only changing when an event ends?
         # maintain best objects
-        camera_activity: dict[str, list[any]] = {
+        camera_activity: dict[str, list[Any]] = {
             "motion": len(motion_boxes) > 0,
             "objects": [],
         }
@@ -398,13 +415,9 @@ class CameraState:
                     or (now - current_best.thumbnail_data["frame_time"])
                     > self.camera_config.best_image_timeout
                 ):
-                    self.best_objects[object_type] = obj
-                    for c in self.callbacks["snapshot"]:
-                        c(self.name, self.best_objects[object_type], frame_name)
+                    self.send_mqtt_snapshot(obj, object_type)
             else:
-                self.best_objects[object_type] = obj
-                for c in self.callbacks["snapshot"]:
-                    c(self.name, self.best_objects[object_type], frame_name)
+                self.send_mqtt_snapshot(obj, object_type)
 
         for c in self.callbacks["camera_activity"]:
             c(self.name, camera_activity)
@@ -413,7 +426,7 @@ class CameraState:
         current_thumb_frames = {
             obj.thumbnail_data["frame_time"]
             for obj in tracked_objects.values()
-            if not obj.false_positive and obj.thumbnail_data is not None
+            if obj.thumbnail_data is not None
         }
         current_best_frames = {
             obj.thumbnail_data["frame_time"] for obj in self.best_objects.values()
@@ -423,7 +436,20 @@ class CameraState:
             for t in self.frame_cache.keys()
             if t not in current_thumb_frames and t not in current_best_frames
         ]
+        if len(thumb_frames_to_delete) > 0:
+            logger.debug(f"{self.name}: Current frame cache contents:")
+            for k, v in self.frame_cache.items():
+                logger.debug(f"  frame time: {k}, object id: {v['object_id']}")
+            for obj_id, obj in tracked_objects.items():
+                thumb_time = (
+                    obj.thumbnail_data["frame_time"] if obj.thumbnail_data else None
+                )
+                logger.debug(
+                    f"{self.name}: Tracked object {obj_id} thumbnail frame_time: {thumb_time}, false positive: {obj.false_positive}"
+                )
         for t in thumb_frames_to_delete:
+            object_id = self.frame_cache[t].get("object_id", "unknown")
+            logger.debug(f"{self.name}: Deleting {t} from frame cache for {object_id}")
             del self.frame_cache[t]
 
         with self.current_frame_lock:
@@ -439,6 +465,20 @@ class CameraState:
                     self.frame_manager.close(self.previous_frame_id)
 
             self.previous_frame_id = frame_name
+
+    def send_mqtt_snapshot(self, new_obj: TrackedObject, object_type: str) -> None:
+        for c in self.callbacks["snapshot"]:
+            updated = c(self.name, new_obj)
+
+            # if the snapshot was not updated, then this object is not a best object
+            # but all new objects should be considered the next best object
+            # so we remove the label from the best objects
+            if updated:
+                self.best_objects[object_type] = new_obj
+            else:
+                if object_type in self.best_objects:
+                    self.best_objects.pop(object_type)
+                break
 
     def save_manual_event_image(
         self,

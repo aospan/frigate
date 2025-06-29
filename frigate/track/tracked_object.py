@@ -5,7 +5,7 @@ import math
 import os
 from collections import defaultdict
 from statistics import median
-from typing import Optional
+from typing import Any, Optional
 
 import cv2
 import numpy as np
@@ -18,6 +18,7 @@ from frigate.config import (
 )
 from frigate.const import CLIPS_DIR, THUMB_DIR
 from frigate.review.types import SeverityEnum
+from frigate.util.builtin import sanitize_float
 from frigate.util.image import (
     area,
     calculate_region,
@@ -38,7 +39,7 @@ class TrackedObject:
         camera_config: CameraConfig,
         ui_config: UIConfig,
         frame_cache,
-        obj_data: dict[str, any],
+        obj_data: dict[str, Any],
     ):
         # set the score history then remove as it is not part of object state
         self.score_history = obj_data["score_history"]
@@ -154,7 +155,7 @@ class TrackedObject:
                         "attributes": obj_data["attributes"],
                         "current_estimated_speed": self.current_estimated_speed,
                         "velocity_angle": self.velocity_angle,
-                        "path_data": self.path_data,
+                        "path_data": self.path_data.copy(),
                         "recognized_license_plate": obj_data.get(
                             "recognized_license_plate"
                         ),
@@ -201,6 +202,11 @@ class TrackedObject:
                                 self.camera_config.detect.fps,
                             )
                         )
+
+                        # users can configure speed zones incorrectly, so sanitize speed_magnitude
+                        # and velocity_angle in case the values come back as inf or NaN
+                        speed_magnitude = sanitize_float(speed_magnitude)
+                        self.velocity_angle = sanitize_float(self.velocity_angle)
 
                         if self.ui_config.unit_system == "metric":
                             self.current_estimated_speed = (
@@ -344,6 +350,9 @@ class TrackedObject:
 
         self.obj_data.update(obj_data)
         self.current_zones = current_zones
+        logger.debug(
+            f"{self.camera_config.name}: Updating {obj_data['id']}: thumb update? {thumb_update}, significant change? {significant_change}, path update? {path_update}, autotracker update? {autotracker_update} "
+        )
         return (thumb_update, significant_change, path_update, autotracker_update)
 
     def to_dict(self):
@@ -378,22 +387,22 @@ class TrackedObject:
             "current_estimated_speed": self.current_estimated_speed,
             "average_estimated_speed": self.average_estimated_speed,
             "velocity_angle": self.velocity_angle,
-            "path_data": self.path_data,
+            "path_data": self.path_data.copy(),
             "recognized_license_plate": self.obj_data.get("recognized_license_plate"),
         }
 
         return event
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return not self.is_stationary()
 
-    def is_stationary(self):
+    def is_stationary(self) -> bool:
         return (
             self.obj_data["motionless_count"]
             > self.camera_config.detect.stationary.threshold
         )
 
-    def get_thumbnail(self, ext: str):
+    def get_thumbnail(self, ext: str) -> bytes | None:
         img_bytes = self.get_img_bytes(
             ext, timestamp=False, bounding_box=False, crop=True, height=175
         )
@@ -404,13 +413,13 @@ class TrackedObject:
             _, img = cv2.imencode(f".{ext}", np.zeros((175, 175, 3), np.uint8))
             return img.tobytes()
 
-    def get_clean_png(self):
+    def get_clean_png(self) -> bytes | None:
         if self.thumbnail_data is None:
             return None
 
         try:
             best_frame = cv2.cvtColor(
-                self.frame_cache[self.thumbnail_data["frame_time"]],
+                self.frame_cache[self.thumbnail_data["frame_time"]]["frame"],
                 cv2.COLOR_YUV2BGR_I420,
             )
         except KeyError:
@@ -433,13 +442,13 @@ class TrackedObject:
         crop=False,
         height: int | None = None,
         quality: int | None = None,
-    ):
+    ) -> bytes | None:
         if self.thumbnail_data is None:
             return None
 
         try:
             best_frame = cv2.cvtColor(
-                self.frame_cache[self.thumbnail_data["frame_time"]],
+                self.frame_cache[self.thumbnail_data["frame_time"]]["frame"],
                 cv2.COLOR_YUV2BGR_I420,
             )
         except KeyError:
@@ -474,6 +483,7 @@ class TrackedObject:
             # draw any attributes
             for attribute in self.thumbnail_data["attributes"]:
                 box = attribute["box"]
+                box_area = int((box[2] - box[0]) * (box[3] - box[1]))
                 draw_box_with_label(
                     best_frame,
                     box[0],
@@ -481,7 +491,7 @@ class TrackedObject:
                     box[2],
                     box[3],
                     attribute["label"],
-                    f"{attribute['score']:.0%}",
+                    f"{attribute['score']:.0%} {str(box_area)}",
                     thickness=thickness,
                     color=color,
                 )
@@ -621,7 +631,7 @@ class TrackedObjectAttribute:
         self.ratio = raw_data[4]
         self.region = raw_data[5]
 
-    def get_tracking_data(self) -> dict[str, any]:
+    def get_tracking_data(self) -> dict[str, Any]:
         """Return data saved to the object."""
         return {
             "label": self.label,
@@ -629,7 +639,7 @@ class TrackedObjectAttribute:
             "box": self.box,
         }
 
-    def find_best_object(self, objects: list[dict[str, any]]) -> Optional[str]:
+    def find_best_object(self, objects: list[dict[str, Any]]) -> Optional[str]:
         """Find the best attribute for each object and return its ID."""
         best_object_area = None
         best_object_id = None
@@ -649,8 +659,9 @@ class TrackedObjectAttribute:
                 best_object_id = obj["id"]
                 best_object_label = obj["label"]
             else:
-                if best_object_label == "car" and obj["label"] == "car":
-                    # if multiple cars are overlapping with the same label then the label will not be assigned
+                if best_object_label == obj["label"]:
+                    # if multiple objects of the same type are overlapping
+                    # then the attribute will not be assigned
                     return None
                 elif object_area < best_object_area:
                     # if a car and person are overlapping then assign the label to the smaller object (which should be the person)

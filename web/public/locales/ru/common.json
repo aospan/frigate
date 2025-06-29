@@ -19,20 +19,20 @@
     "24hours": "24 часа",
     "pm": "pm",
     "am": "am",
-    "yr": "{{time}}л",
+    "yr": "{{time}} л",
     "year_one": "{{time}} год",
     "year_few": "{{time}} года",
     "year_many": "{{time}} лет",
-    "mo": "{{time}}мес",
+    "mo": "{{time}} мес",
     "month_one": "{{time}} месяц",
     "month_few": "{{time}} месяца",
     "month_many": "{{time}} месяцев",
-    "d": "{{time}}д",
-    "h": "{{time}}ч",
+    "d": "{{time}} д",
+    "h": "{{time}} ч",
     "hour_one": "{{time}} час",
     "hour_few": "{{time}} часа",
     "hour_many": "{{time}} часов",
-    "m": "{{time}}мин",
+    "m": "{{time}} мин",
     "minute_one": "{{time}} минута",
     "minute_few": "{{time}} минуты",
     "minute_many": "{{time}} минут",
@@ -42,7 +42,7 @@
     "lastWeek": "На прошлой неделе",
     "lastMonth": "В прошлом месяце",
     "10minutes": "10 минут",
-    "s": "{{time}}с",
+    "s": "{{time}} с",
     "second_one": "{{time}} секунда",
     "second_few": "{{time}} секунды",
     "second_many": "{{time}} секунд",
@@ -83,6 +83,10 @@
     "formattedTimestampHourMinute": {
       "12hour": "h:mm aaa",
       "24hour": "HH:mm"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "MMM d, yyyy",
+      "24hour": "MMM d, yyyy"
     }
   },
   "selectItem": "Выбор {{item}}",
@@ -130,6 +134,10 @@
     "speed": {
       "kph": "км/ч",
       "mph": "миль/ч"
+    },
+    "length": {
+      "meters": "метры",
+      "feet": "футы"
     }
   },
   "menu": {
@@ -171,7 +179,10 @@
       "he": "עברית (Иврит)",
       "withSystem": {
         "label": "Использовать системные настройки языка"
-      }
+      },
+      "yue": "粵語 (Кантонский)",
+      "th": "ไทย (Тайский)",
+      "ca": "Català (Каталонский)"
     },
     "darkMode": {
       "withSystem": {
@@ -189,7 +200,8 @@
       "green": "Зелёная",
       "nord": "Северная",
       "red": "Красная",
-      "contrast": "Высокий контраст"
+      "contrast": "Высокий контраст",
+      "highcontrast": "Контрастная"
     },
     "help": "Помощь",
     "documentation": {

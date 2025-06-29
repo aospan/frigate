@@ -21,7 +21,7 @@
     "aria": "Выбрати події",
     "noFoundForTimePeriod": "За цей період подій не знайдено."
   },
-  "documentTitle": "Перегляд - Frigate",
+  "documentTitle": "Перегляд подiя - Frigate",
   "recordings": {
     "documentTitle": "Записи - Frigate"
   },
@@ -33,5 +33,6 @@
   "newReviewItems": {
     "label": "Переглянути нові елементи огляду",
     "button": "Нові матеріали для перегляду"
-  }
+  },
+  "detected": "виявлено"
 }

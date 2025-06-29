@@ -83,6 +83,10 @@
     "formattedTimestampFilename": {
       "24hour": "MM-dd-yy-HH-mm-ss",
       "12hour": "MM-dd-yy-h-mm-ss-a"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "d MMM, yyyy",
+      "24hour": "d MMM, yyyy"
     }
   },
   "button": {
@@ -126,10 +130,14 @@
     "speed": {
       "kph": "km/h",
       "mph": "miglia/h"
+    },
+    "length": {
+      "feet": "piedi",
+      "meters": "metri"
     }
   },
   "label": {
-    "back": "Indietro"
+    "back": "Vai indietro"
   },
   "menu": {
     "configuration": "Configurazione",
@@ -170,7 +178,10 @@
       "pl": "Polski (Polacco)",
       "de": "Deutsch (Tedesco)",
       "he": "עברית (Ebraico)",
-      "it": "Italiano (Italiano)"
+      "it": "Italiano (Italiano)",
+      "yue": "粵語 (Cantonese)",
+      "th": "ไทย (Tailandese)",
+      "ca": "Català (Catalano)"
     },
     "darkMode": {
       "label": "Modalità scura",
@@ -188,7 +199,8 @@
       "green": "Verde",
       "default": "Predefinito",
       "red": "Rosso",
-      "nord": "Nord"
+      "nord": "Nord",
+      "highcontrast": "Contrasto elevato"
     },
     "live": {
       "cameras": {

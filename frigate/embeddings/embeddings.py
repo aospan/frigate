@@ -1,12 +1,14 @@
 """SQLite-vec embeddings database."""
 
 import datetime
+import io
 import logging
 import os
 import threading
 import time
 
 from numpy import ndarray
+from PIL import Image
 from playhouse.shortcuts import model_to_dict
 
 from frigate.comms.inter_process import InterProcessRequestor
@@ -21,7 +23,7 @@ from frigate.data_processing.types import DataProcessorMetrics
 from frigate.db.sqlitevecq import SqliteVecQueueDatabase
 from frigate.models import Event
 from frigate.types import ModelStatusTypesEnum
-from frigate.util.builtin import EventsPerSecond, serialize
+from frigate.util.builtin import EventsPerSecond, InferenceSpeed, serialize
 from frigate.util.path import get_event_thumbnail_bytes
 
 from .onnx.jina_v1_embedding import JinaV1ImageEmbedding, JinaV1TextEmbedding
@@ -75,8 +77,10 @@ class Embeddings:
         self.metrics = metrics
         self.requestor = InterProcessRequestor()
 
+        self.image_inference_speed = InferenceSpeed(self.metrics.image_embeddings_speed)
         self.image_eps = EventsPerSecond()
         self.image_eps.start()
+        self.text_inference_speed = InferenceSpeed(self.metrics.text_embeddings_speed)
         self.text_eps = EventsPerSecond()
         self.text_eps.start()
 
@@ -183,10 +187,7 @@ class Embeddings:
                 (event_id, serialize(embedding)),
             )
 
-        duration = datetime.datetime.now().timestamp() - start
-        self.metrics.image_embeddings_speed.value = (
-            self.metrics.image_embeddings_speed.value * 9 + duration
-        ) / 10
+        self.image_inference_speed.update(datetime.datetime.now().timestamp() - start)
         self.image_eps.update()
 
         return embedding
@@ -200,14 +201,31 @@ class Embeddings:
         @param: upsert If embedding should be upserted into vec DB
         """
         start = datetime.datetime.now().timestamp()
-        ids = list(event_thumbs.keys())
-        embeddings = self.vision_embedding(list(event_thumbs.values()))
+        valid_ids = []
+        valid_thumbs = []
+        for eid, thumb in event_thumbs.items():
+            try:
+                img = Image.open(io.BytesIO(thumb))
+                img.verify()  # Will raise if corrupt
+                valid_ids.append(eid)
+                valid_thumbs.append(thumb)
+            except Exception as e:
+                logger.warning(
+                    f"Embeddings reindexing: Skipping corrupt thumbnail for event {eid}: {e}"
+                )
+
+        if not valid_thumbs:
+            logger.warning(
+                "Embeddings reindexing: No valid thumbnails to embed in this batch."
+            )
+            return []
+
+        embeddings = self.vision_embedding(valid_thumbs)
 
         if upsert:
             items = []
-
-            for i in range(len(ids)):
-                items.append(ids[i])
+            for i in range(len(valid_ids)):
+                items.append(valid_ids[i])
                 items.append(serialize(embeddings[i]))
                 self.image_eps.update()
 
@@ -215,14 +233,12 @@ class Embeddings:
                 """
                 INSERT OR REPLACE INTO vec_thumbnails(id, thumbnail_embedding)
                 VALUES {}
-                """.format(", ".join(["(?, ?)"] * len(ids))),
+                """.format(", ".join(["(?, ?)"] * len(valid_ids))),
                 items,
             )
 
         duration = datetime.datetime.now().timestamp() - start
-        self.metrics.text_embeddings_speed.value = (
-            self.metrics.text_embeddings_speed.value * 9 + (duration / len(ids))
-        ) / 10
+        self.text_inference_speed.update(duration / len(valid_ids))
 
         return embeddings
 
@@ -241,10 +257,7 @@ class Embeddings:
                 (event_id, serialize(embedding)),
             )
 
-        duration = datetime.datetime.now().timestamp() - start
-        self.metrics.text_embeddings_speed.value = (
-            self.metrics.text_embeddings_speed.value * 9 + duration
-        ) / 10
+        self.text_inference_speed.update(datetime.datetime.now().timestamp() - start)
         self.text_eps.update()
 
         return embedding
@@ -276,10 +289,7 @@ class Embeddings:
                 items,
             )
 
-        duration = datetime.datetime.now().timestamp() - start
-        self.metrics.text_embeddings_speed.value = (
-            self.metrics.text_embeddings_speed.value * 9 + (duration / len(ids))
-        ) / 10
+        self.text_inference_speed.update(datetime.datetime.now().timestamp() - start)
 
         return embeddings
 

@@ -77,6 +77,10 @@
     "formattedTimestampFilename": {
       "12hour": "dd-MM-yy-h-mm-ss-a",
       "24hour": "dd-MM-yy-HH-mm-ss"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "d MMM, yyyy",
+      "24hour": "d MMM, yyyy"
     }
   },
   "button": {
@@ -159,7 +163,10 @@
       "fa": "فارسی (Farsça)",
       "es": "Español (İspanyolca)",
       "ar": "العربية (Arapça)",
-      "ru": "Русский (Rusça)"
+      "ru": "Русский (Rusça)",
+      "yue": "粵語 (Kantonca)",
+      "th": "ไทย (Tayca)",
+      "ca": "Català (Katalanca)"
     },
     "withSystem": "Sistem",
     "theme": {
@@ -169,7 +176,8 @@
       "green": "Yeşil",
       "red": "Kırmızı",
       "default": "Varsayılan",
-      "nord": "Kuzey"
+      "nord": "Kuzey",
+      "highcontrast": "Yüksek Karşıtlık"
     },
     "restart": "Frigate'i yeniden başlat",
     "live": {
@@ -217,6 +225,10 @@
     "speed": {
       "mph": "mph",
       "kph": "km/s"
+    },
+    "length": {
+      "feet": "feet",
+      "meters": "metre"
     }
   },
   "pagination": {

@@ -89,7 +89,7 @@
     "label": "Transmisión",
     "showStats": {
       "label": "Mostrar estadísticas de transmisión",
-      "desc": "Habilita esta opción para mostrar estadísticas de transmisión como una superposición en la alimentación de la cámara."
+      "desc": "Habilita esta opción para mostrar las estadísticas de transmisión como una superposición en la imagen de la cámara."
     }
   },
   "search": {
@@ -111,6 +111,10 @@
       "title": "Confirmar eliminación",
       "desc": {
         "selected": "¿Estás seguro de que quieres eliminar todo el video grabado asociado con este elemento de revisión?<br /><br />Mantén presionada la tecla <em>Shift</em> para omitir este diálogo en el futuro."
+      },
+      "toast": {
+        "success": "El metraje de video asociado con los elementos de revisión seleccionados se ha eliminado con éxito.",
+        "error": "No se pudo eliminar: {{error}}"
       }
     },
     "button": {

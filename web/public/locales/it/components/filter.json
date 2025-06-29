@@ -21,7 +21,8 @@
     "all": {
       "title": "Tutte le date",
       "short": "Date"
-    }
+    },
+    "selectPreset": "Seleziona una preimpostazione…"
   },
   "reset": {
     "label": "Ripristina i filtri ai valori predefiniti"
@@ -96,7 +97,7 @@
     "selectPlatesFromList": "Seleziona una o più targhe dall'elenco.",
     "loadFailed": "Impossibile caricare le targhe riconosciute.",
     "loading": "Caricamento targhe riconosciute…",
-    "placeholder": "Digita per cercare le targhe...",
+    "placeholder": "Digita per cercare le targhe…",
     "noLicensePlatesFound": "Nessuna targa trovata."
   },
   "timeRange": "Intervallo di tempo",

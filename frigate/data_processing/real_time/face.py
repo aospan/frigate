@@ -5,10 +5,9 @@ import datetime
 import json
 import logging
 import os
-import random
 import shutil
-import string
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
 
 import cv2
 import numpy as np
@@ -27,7 +26,7 @@ from frigate.data_processing.common.face.model import (
     FaceRecognizer,
 )
 from frigate.types import TrackedObjectUpdateTypesEnum
-from frigate.util.builtin import EventsPerSecond
+from frigate.util.builtin import EventsPerSecond, InferenceSpeed
 from frigate.util.image import area
 
 from ..types import DataProcessorMetrics
@@ -56,8 +55,10 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
         self.face_detector: cv2.FaceDetectorYN = None
         self.requires_face_detection = "face" not in self.config.objects.all_objects
         self.person_face_history: dict[str, list[tuple[str, float, int]]] = {}
+        self.camera_current_people: dict[str, list[str]] = {}
         self.recognizer: FaceRecognizer | None = None
         self.faces_per_second = EventsPerSecond()
+        self.inference_speed = InferenceSpeed(self.metrics.face_rec_speed)
 
         download_path = os.path.join(MODEL_CACHE_DIR, "facedet")
         self.model_files = {
@@ -155,11 +156,9 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
 
     def __update_metrics(self, duration: float) -> None:
         self.faces_per_second.update()
-        self.metrics.face_rec_speed.value = (
-            self.metrics.face_rec_speed.value * 9 + duration
-        ) / 10
+        self.inference_speed.update(duration)
 
-    def process_frame(self, obj_data: dict[str, any], frame: np.ndarray):
+    def process_frame(self, obj_data: dict[str, Any], frame: np.ndarray):
         """Look for faces in image."""
         self.metrics.face_rec_fps.value = self.faces_per_second.eps()
         camera = obj_data["camera"]
@@ -200,7 +199,7 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
                 logger.debug("Not processing due to hitting max rec attempts.")
                 return
 
-        face: Optional[dict[str, any]] = None
+        face: Optional[dict[str, Any]] = None
 
         if self.requires_face_detection:
             logger.debug("Running manual face detection.")
@@ -223,6 +222,13 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
                 max(0, face_box[0]) : min(frame.shape[1], face_box[2]),
             ]
 
+            # check that face is correct size
+            if area(face_box) < self.config.cameras[camera].face_recognition.min_area:
+                logger.debug(
+                    f"Detected face that is smaller than the min_area {face} < {self.config.cameras[camera].face_recognition.min_area}"
+                )
+                return
+
             try:
                 face_frame = cv2.cvtColor(face_frame, cv2.COLOR_RGB2BGR)
             except Exception:
@@ -233,7 +239,7 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
                 logger.debug("No attributes to parse.")
                 return
 
-            attributes: list[dict[str, any]] = obj_data.get("current_attributes", [])
+            attributes: list[dict[str, Any]] = obj_data.get("current_attributes", [])
             for attr in attributes:
                 if attr.get("label") != "face":
                     continue
@@ -285,12 +291,20 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
         if id not in self.person_face_history:
             self.person_face_history[id] = []
 
+            if camera not in self.camera_current_people:
+                self.camera_current_people[camera] = []
+
+            self.camera_current_people[camera].append(id)
+
         self.person_face_history[id].append(
             (sub_label, score, face_frame.shape[0] * face_frame.shape[1])
         )
         (weighted_sub_label, weighted_score) = self.weighted_average(
             self.person_face_history[id]
         )
+
+        if len(self.person_face_history[id]) < self.face_config.min_faces:
+            weighted_sub_label = "unknown"
 
         self.requestor.send_data(
             "tracked_object_update",
@@ -314,7 +328,7 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
 
         self.__update_metrics(datetime.datetime.now().timestamp() - start)
 
-    def handle_request(self, topic, request_data) -> dict[str, any] | None:
+    def handle_request(self, topic, request_data) -> dict[str, Any] | None:
         if topic == EmbeddingsRequestEnum.clear_face_classifier.value:
             self.recognizer.clear()
         elif topic == EmbeddingsRequestEnum.recognize_face.value:
@@ -343,11 +357,7 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
 
             return {"success": True, "score": score, "face_name": sub_label}
         elif topic == EmbeddingsRequestEnum.register_face.value:
-            rand_id = "".join(
-                random.choices(string.ascii_lowercase + string.digits, k=6)
-            )
             label = request_data["face_name"]
-            id = f"{label}-{rand_id}"
 
             if request_data.get("cropped"):
                 thumbnail = request_data["image"]
@@ -376,7 +386,9 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
 
             # write face to library
             folder = os.path.join(FACE_DIR, label)
-            file = os.path.join(folder, f"{id}.webp")
+            file = os.path.join(
+                folder, f"{label}_{datetime.datetime.now().timestamp()}.webp"
+            )
             os.makedirs(folder, exist_ok=True)
 
             # save face image
@@ -425,9 +437,12 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
                 )
                 shutil.move(current_file, new_file)
 
-    def expire_object(self, object_id: str):
+    def expire_object(self, object_id: str, camera: str):
         if object_id in self.person_face_history:
             self.person_face_history.pop(object_id)
+
+            if object_id in self.camera_current_people.get(camera, []):
+                self.camera_current_people[camera].remove(object_id)
 
     def weighted_average(
         self, results_list: list[tuple[str, float, int]], max_weight: int = 4000
@@ -445,16 +460,21 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
         if not results_list:
             return None, 0.0
 
-        weighted_scores = {}
-        total_weights = {}
+        counts: dict[str, int] = {}
+        weighted_scores: dict[str, int] = {}
+        total_weights: dict[str, int] = {}
 
         for name, score, face_area in results_list:
             if name == "unknown":
                 continue
 
             if name not in weighted_scores:
+                counts[name] = 0
                 weighted_scores[name] = 0.0
                 total_weights[name] = 0.0
+
+            # increase count
+            counts[name] += 1
 
             # Capped weight based on face area
             weight = min(face_area, max_weight)
@@ -468,6 +488,12 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
             return None, 0.0
 
         best_name = max(weighted_scores, key=weighted_scores.get)
+
+        # If the best name has the same number of results as another name, we are not confident it is a correct result
+        for name, count in counts.items():
+            if name != best_name and counts[best_name] == count:
+                return None, 0.0
+
         weighted_average = weighted_scores[best_name] / total_weights[best_name]
 
         return best_name, weighted_average
@@ -501,4 +527,4 @@ class FaceRealTimeProcessor(RealTimeProcessorApi):
 
             # delete oldest face image if maximum is reached
             if len(files) > self.config.face_recognition.save_attempts:
-                os.unlink(os.path.join(folder, files[-1]))
+                Path(os.path.join(folder, files[-1])).unlink(missing_ok=True)

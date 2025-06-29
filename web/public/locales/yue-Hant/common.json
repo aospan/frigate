@@ -62,12 +62,20 @@
     },
     "1hour": "1 小時",
     "h": "{{time}}小時",
-    "formattedTimestampMonthDay": "M月d日"
+    "formattedTimestampMonthDay": "M月d日",
+    "formattedTimestampMonthDayYear": {
+      "24hour": "yy年MM月dd日",
+      "12hour": "yy年MM月dd日"
+    }
   },
   "unit": {
     "speed": {
       "mph": "英里/小時",
       "kph": "公里/小時"
+    },
+    "length": {
+      "feet": "呎",
+      "meters": "米"
     }
   },
   "label": {
@@ -149,7 +157,10 @@
       "ar": "العربية (阿拉伯文)",
       "pt": "Português (葡萄牙文)",
       "uk": "Українська (烏克蘭文)",
-      "he": "עברית (希伯來文)"
+      "he": "עברית (希伯來文)",
+      "yue": "粵語 (廣東話)",
+      "th": "ไทย (泰文)",
+      "ca": "Català (加泰羅尼亞語)"
     },
     "appearance": "外觀",
     "darkMode": {
@@ -168,7 +179,8 @@
       "nord": "北歐風",
       "red": "紅色",
       "default": "預設",
-      "contrast": "高對比"
+      "contrast": "高對比",
+      "highcontrast": "高對比度"
     },
     "documentation": {
       "title": "文件",

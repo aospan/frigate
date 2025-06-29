@@ -3,7 +3,7 @@
     "cameras": "Statystyki kamer - Frigate",
     "storage": "Statystyki Magazynowania - Frigate",
     "general": "Statystyki Ogólne - Frigate",
-    "enrichments": "Statystyki Wzbogaceń - Frigate",
+    "enrichments": "Statystyki Wzbogacania - Frigate",
     "logs": {
       "frigate": "Logi Frigate - Frigate",
       "go2rtc": "Logi Go2RTC - Frigate",
@@ -49,7 +49,8 @@
       "title": "Detektory",
       "inferenceSpeed": "Szybkość wnioskowania detektora",
       "cpuUsage": "Użycie CPU przez detektor",
-      "memoryUsage": "Użycie pamięci przez detektor"
+      "memoryUsage": "Użycie pamięci przez detektor",
+      "temperature": "Temperatura detektora"
     },
     "otherProcesses": {
       "title": "Inne procesy",
@@ -72,7 +73,8 @@
       "tips": {
         "title": "Informacje o sondowaniu kamery"
       },
-      "fetching": "Pobieranie danych kamery"
+      "fetching": "Pobieranie danych kamery",
+      "aspectRatio": "proporcje"
     },
     "toast": {
       "success": {
@@ -89,8 +91,17 @@
       "camera": "kamera",
       "detect": "wykryj",
       "skipped": "pominięte",
-      "ffmpeg": "ffmpeg",
-      "capture": "przechwytywanie"
+      "ffmpeg": "FFmpeg",
+      "capture": "przechwytywanie",
+      "overallSkippedDetectionsPerSecond": "łączna liczba pominiętych detekcji na sekundę",
+      "cameraSkippedDetectionsPerSecond": "{{camName}} liczba pominiętych detekcji na sekundę",
+      "overallFramesPerSecond": "łączna liczba klatek na sekundę",
+      "overallDetectionsPerSecond": "łączna liczba detekcji na sekundę",
+      "cameraCapture": "{{camName}} przechwytywanie",
+      "cameraDetect": "{{camName}} detekcja",
+      "cameraFramesPerSecond": "{{camName}} liczba klatek na sekundę",
+      "cameraDetectionsPerSecond": "{{camName}} liczba detekcji na sekundę",
+      "cameraFfmpeg": "{{camName}} FFmpeg"
     }
   },
   "storage": {
@@ -141,7 +152,7 @@
   "metrics": "Metryki systemowe",
   "lastRefreshed": "Ostatnie odświeżenie: ",
   "stats": {
-    "ffmpegHighCpuUsage": "{{camera}} ma wysokie użycie CPU przez FFMPEG ({{ffmpegAvg}}%)",
+    "ffmpegHighCpuUsage": "{{camera}} ma wysokie użycie CPU przez FFmpeg ({{ffmpegAvg}}%)",
     "detectHighCpuUsage": "{{camera}} ma wysokie użycie CPU przez detekcję ({{detectAvg}}%)",
     "healthy": "System jest sprawny",
     "reindexingEmbeddings": "Ponowne indeksowanie osadzeń ({{processed}}% ukończone)",

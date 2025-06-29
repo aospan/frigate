@@ -41,6 +41,9 @@ import { StatusBarMessagesContext } from "@/context/statusbar-provider";
 import { useSearchEffect } from "@/hooks/use-overlay-state";
 import { useTranslation } from "react-i18next";
 
+import { useDocDomain } from "@/hooks/use-doc-domain";
+import { getTranslatedLabel } from "@/utils/i18n";
+
 type MasksAndZoneViewProps = {
   selectedCamera: string;
   selectedZoneMask?: PolygonType[];
@@ -53,6 +56,7 @@ export default function MasksAndZonesView({
   setUnsavedChanges,
 }: MasksAndZoneViewProps) {
   const { t } = useTranslation(["views/settings"]);
+  const { getLocaleDocUrl } = useDocDomain();
   const { data: config } = useSWR<FrigateConfig>("config");
   const [allPolygons, setAllPolygons] = useState<Polygon[]>([]);
   const [editingPolygons, setEditingPolygons] = useState<Polygon[]>([]);
@@ -271,7 +275,9 @@ export default function MasksAndZonesView({
         type: "motion_mask" as PolygonType,
         typeIndex: index,
         camera: cameraConfig.name,
-        name: `Motion Mask ${index + 1}`,
+        name: t("masksAndZones.motionMaskLabel", {
+          number: index + 1,
+        }),
         objects: [],
         points: interpolatePoints(
           parseCoordinates(maskData),
@@ -295,7 +301,10 @@ export default function MasksAndZonesView({
         type: "object_mask" as PolygonType,
         typeIndex: index,
         camera: cameraConfig.name,
-        name: `Object Mask ${index + 1} (all objects)`,
+        name: t("masksAndZones.objectMaskLabel", {
+          number: index + 1,
+          label: t("masksAndZones.zones.allObjects"),
+        }),
         objects: [],
         points: interpolatePoints(
           parseCoordinates(maskData),
@@ -322,7 +331,10 @@ export default function MasksAndZonesView({
               type: "object_mask" as PolygonType,
               typeIndex: subIndex,
               camera: cameraConfig.name,
-              name: `Object Mask ${globalObjectMasksCount + index + 1} (${objectName})`,
+              name: t("masksAndZones.objectMaskLabel", {
+                number: globalObjectMasksCount + index + 1,
+                label: getTranslatedLabel(objectName),
+              }),
               objects: [objectName],
               points: interpolatePoints(
                 parseCoordinates(maskItem),
@@ -505,7 +517,7 @@ export default function MasksAndZonesView({
                               <p>{t("masksAndZones.zones.desc.title")}</p>
                               <div className="flex items-center text-primary">
                                 <Link
-                                  to="https://docs.frigate.video/configuration/zones"
+                                  to={getLocaleDocUrl("configuration/zones")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline"
@@ -571,7 +583,9 @@ export default function MasksAndZonesView({
                               <p>{t("masksAndZones.motionMasks.desc.title")}</p>
                               <div className="flex items-center text-primary">
                                 <Link
-                                  to="https://docs.frigate.video/configuration/masks#motion-masks"
+                                  to={getLocaleDocUrl(
+                                    "configuration/masks#motion-masks",
+                                  )}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline"
@@ -641,7 +655,9 @@ export default function MasksAndZonesView({
                               <p>{t("masksAndZones.objectMasks.desc.title")}</p>
                               <div className="flex items-center text-primary">
                                 <Link
-                                  to="https://docs.frigate.video/configuration/masks#object-filter-masks"
+                                  to={getLocaleDocUrl(
+                                    "configuration/masks#object-filter-masks",
+                                  )}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline"

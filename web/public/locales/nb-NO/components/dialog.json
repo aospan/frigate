@@ -29,7 +29,7 @@
           "false_other": "Dette er ikke en {{label}}"
         },
         "question": {
-          "label": "Bekreft denne merkelapp for Frigate Plus",
+          "label": "Bekreft denne merkelappen for Frigate Plus",
           "ask_an": "Er dette objekt en <code>{{label}}</code>?",
           "ask_a": "Er dette objektet en <code>{{label}}</code>?",
           "ask_full": "Er dette objekt en <code>{{untranslatedLabel}}</code> ({{translatedLabel}})?"
@@ -79,7 +79,7 @@
     "restreaming": {
       "disabled": "Restrømming er ikke aktivert for dette kameraet.",
       "desc": {
-        "readTheDocumentation": "Les dokumentasjonen",
+        "readTheDocumentation": "Se dokumentasjonen",
         "title": "Konfigurer go2rtc for flere direktestrømmingsalternativer og lyd for dette kameraet."
       }
     },
@@ -108,6 +108,10 @@
       "title": "Bekreft sletting",
       "desc": {
         "selected": "Er du sikker på at du vil slette alle opptak knyttet til dette inspeksjonselementet?<br /><br />Hold inne <em>Shift</em>-tasten for å hoppe over denne dialogen i fremtiden."
+      },
+      "toast": {
+        "success": "Videomaterialet knyttet til de valgte inspeksjonselementene har blitt slettet.",
+        "error": "Kunne ikke slette: {{error}}"
       }
     },
     "button": {

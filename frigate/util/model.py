@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import Any
 
 import cv2
 import numpy as np
@@ -284,7 +285,7 @@ def post_process_yolox(
 
 def get_ort_providers(
     force_cpu: bool = False, device: str = "AUTO", requires_fp16: bool = False
-) -> tuple[list[str], list[dict[str, any]]]:
+) -> tuple[list[str], list[dict[str, Any]]]:
     if force_cpu:
         return (
             ["CPUExecutionProvider"],
@@ -340,11 +341,17 @@ def get_ort_providers(
             providers.append(provider)
             options.append(
                 {
-                    "arena_extend_strategy": "kSameAsRequested",
                     "cache_dir": os.path.join(MODEL_CACHE_DIR, "openvino/ort"),
                     "device_type": device,
                 }
             )
+        elif provider == "MIGraphXExecutionProvider":
+            # MIGraphX uses more CPU than ROCM, while also being the same speed
+            if device == "MIGraphX":
+                providers.append(provider)
+                options.append({})
+            else:
+                continue
         elif provider == "CPUExecutionProvider":
             providers.append(provider)
             options.append(

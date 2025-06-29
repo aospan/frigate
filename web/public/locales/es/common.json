@@ -83,6 +83,10 @@
     "formattedTimestampMonthDayYearHourMinute": {
       "12hour": "MMM d yyyy, h:mm aaa",
       "24hour": "MMM d yyyy, HH:mm"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "MMM d, yyyy",
+      "24hour": "MMM d, yyyy"
     }
   },
   "menu": {
@@ -134,7 +138,10 @@
       "pt": "Português (Portugues)",
       "cs": "Čeština (Checo)",
       "nl": "Nederlands (Neerlandés)",
-      "fr": "Français (Frances)"
+      "fr": "Français (Frances)",
+      "yue": "粵語 (Cantonés)",
+      "th": "ไทย (Tailandés)",
+      "ca": "Català (Catalan)"
     },
     "appearance": "Apariencia",
     "darkMode": {
@@ -153,7 +160,8 @@
       "nord": "Nord",
       "red": "Rojo",
       "contrast": "Alto contraste",
-      "default": "Predeterminado"
+      "default": "Predeterminado",
+      "highcontrast": "Alto Contraste"
     },
     "documentation": {
       "title": "Documentación",
@@ -179,6 +187,10 @@
     "speed": {
       "mph": "mph",
       "kph": "kph"
+    },
+    "length": {
+      "meters": "Metros",
+      "feet": "Pies"
     }
   },
   "button": {

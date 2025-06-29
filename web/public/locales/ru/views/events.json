@@ -19,7 +19,7 @@
     "aria": "Выбор событий",
     "noFoundForTimePeriod": "Для этого периода времени не найдено ни одного события."
   },
-  "documentTitle": "Просмотр - Frigate",
+  "documentTitle": "Обзор событий - Frigate",
   "recordings": {
     "documentTitle": "Записи - Frigate"
   },
@@ -34,5 +34,6 @@
   "markTheseItemsAsReviewed": "Пометить эти элементы как просмотренные",
   "selected": "{{count}} выбрано",
   "selected_one": "{{count}} выбрано",
-  "selected_other": "{{count}} выбрано"
+  "selected_other": "{{count}} выбрано",
+  "detected": "обнаружен"
 }

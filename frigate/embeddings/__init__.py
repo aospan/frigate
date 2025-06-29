@@ -5,12 +5,12 @@ import json
 import logging
 import multiprocessing as mp
 import os
-import re
 import signal
 import threading
 from types import FrameType
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
+import regex
 from pathvalidate import ValidationError, sanitize_filename
 from setproctitle import setproctitle
 
@@ -190,7 +190,7 @@ class EmbeddingsContext:
 
         return results
 
-    def register_face(self, face_name: str, image_data: bytes) -> dict[str, any]:
+    def register_face(self, face_name: str, image_data: bytes) -> dict[str, Any]:
         return self.requestor.send_data(
             EmbeddingsRequestEnum.register_face.value,
             {
@@ -199,7 +199,7 @@ class EmbeddingsContext:
             },
         )
 
-    def recognize_face(self, image_data: bytes) -> dict[str, any]:
+    def recognize_face(self, image_data: bytes) -> dict[str, Any]:
         return self.requestor.send_data(
             EmbeddingsRequestEnum.recognize_face.value,
             {
@@ -217,7 +217,7 @@ class EmbeddingsContext:
 
         return self.db.execute_sql(sql_query).fetchall()
 
-    def reprocess_face(self, face_file: str) -> dict[str, any]:
+    def reprocess_face(self, face_file: str) -> dict[str, Any]:
         return self.requestor.send_data(
             EmbeddingsRequestEnum.reprocess_face.value, {"image_file": face_file}
         )
@@ -235,7 +235,7 @@ class EmbeddingsContext:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
 
-        if len(os.listdir(folder)) == 0:
+        if face != "train" and len(os.listdir(folder)) == 0:
             os.rmdir(folder)
 
         self.requestor.send_data(
@@ -243,7 +243,7 @@ class EmbeddingsContext:
         )
 
     def rename_face(self, old_name: str, new_name: str) -> None:
-        valid_name_pattern = r"^[a-zA-Z0-9\s_-]{1,50}$"
+        valid_name_pattern = r"^[\p{L}\p{N}\s'_-]{1,50}$"
 
         try:
             sanitized_old_name = sanitize_filename(old_name, replacement_text="_")
@@ -251,9 +251,9 @@ class EmbeddingsContext:
         except ValidationError as e:
             raise ValueError(f"Invalid face name: {str(e)}")
 
-        if not re.match(valid_name_pattern, old_name):
+        if not regex.match(valid_name_pattern, old_name):
             raise ValueError(f"Invalid old face name: {old_name}")
-        if not re.match(valid_name_pattern, new_name):
+        if not regex.match(valid_name_pattern, new_name):
             raise ValueError(f"Invalid new face name: {new_name}")
         if sanitized_old_name != old_name:
             raise ValueError(f"Old face name contains invalid characters: {old_name}")
@@ -284,10 +284,10 @@ class EmbeddingsContext:
             {"id": event_id, "description": description},
         )
 
-    def reprocess_plate(self, event: dict[str, any]) -> dict[str, any]:
+    def reprocess_plate(self, event: dict[str, Any]) -> dict[str, Any]:
         return self.requestor.send_data(
             EmbeddingsRequestEnum.reprocess_plate.value, {"event": event}
         )
 
-    def reindex_embeddings(self) -> dict[str, any]:
+    def reindex_embeddings(self) -> dict[str, Any]:
         return self.requestor.send_data(EmbeddingsRequestEnum.reindex.value, {})

@@ -7,33 +7,33 @@
     "today": "Aujourd'hui",
     "last7": "7 derniers jours",
     "last14": "14 derniers jours",
-    "ago": "{{timeAgo}} avant",
+    "ago": "Il y a {{timeAgo}}",
     "yesterday": "Hier",
     "last30": "30 derniers jours",
     "thisWeek": "Cette semaine",
-    "lastWeek": "Semaine dernière",
+    "lastWeek": "La semaine dernière",
     "thisMonth": "Ce mois-ci",
-    "lastMonth": "Mois dernier",
+    "lastMonth": "Le mois dernier",
     "10minutes": "10 minutes",
     "5minutes": "5 minutes",
     "30minutes": "30 minutes",
     "12hours": "12 heures",
-    "h": "{{time}}h",
+    "h": "{{time}} h",
     "pm": "PM",
     "am": "AM",
-    "yr": "{{time}}a",
+    "yr": "{{time}} a",
     "year_one": "{{time}} année",
     "year_many": "{{time}} années",
     "year_other": "{{time}} années",
-    "mo": "{{time}}m",
+    "mo": "{{time}} m",
     "month_one": "{{time}} mois",
     "month_many": "{{time}} mois",
     "month_other": "{{time}} mois",
-    "s": "{{time}}s",
+    "s": "{{time}} s",
     "second_one": "{{time}} seconde",
     "second_many": "{{time}} secondes",
     "second_other": "{{time}} secondes",
-    "m": "{{time}}m",
+    "m": "{{time}} mn",
     "hour_one": "{{time}} heure",
     "hour_many": "{{time}} heures",
     "hour_other": "{{time}} heures",
@@ -41,14 +41,14 @@
     "minute_one": "{{time}} minute",
     "minute_many": "{{time}} minutes",
     "minute_other": "{{time}} minutes",
-    "d": "{{time}}j",
+    "d": "{{time}} j",
     "day_one": "{{time}} jour",
     "day_many": "{{time}} jours",
     "day_other": "{{time}} jours",
     "1hour": "1 heure",
     "formattedTimestamp": {
-      "12hour": "MMM d, h:mm:ss aaa",
-      "24hour": "MMM d, HH:mm:ss"
+      "12hour": "d MMM HH:mm:ss",
+      "24hour": "d MMM HH:mm:ss"
     },
     "formattedTimestampWithYear": {
       "24hour": "%b %-d %Y, %H:%M",
@@ -60,29 +60,33 @@
       "24hour": "%b %-d, %H:%M"
     },
     "formattedTimestamp2": {
-      "12hour": "MM/dd h:mm:ssa",
+      "12hour": "dd/MM HH:mm:ss",
       "24hour": "d MMM HH:mm:ss"
     },
     "formattedTimestampHourMinute": {
       "24hour": "HH:mm",
-      "12hour": "h:mm aaa"
+      "12hour": "HH:mm aaa"
     },
-    "formattedTimestampMonthDay": "MMM d",
+    "formattedTimestampMonthDay": "d MMM",
     "formattedTimestampFilename": {
-      "12hour": "MM-dd-yy-h-mm-ss-a",
-      "24hour": "MM-dd-yy-HH-mm-ss"
+      "12hour": "dd-MM-yy-HH-mm-ss-a",
+      "24hour": "dd-MM-yy-HH-mm-ss"
     },
     "formattedTimestampMonthDayHourMinute": {
-      "12hour": "MMM d, h:mm aaa",
-      "24hour": "MMM d, HH:mm"
+      "12hour": "d MMM, HH:mm aaa",
+      "24hour": "d MMM, HH:mm"
     },
     "formattedTimestampHourMinuteSecond": {
       "24hour": "HH:mm:ss",
-      "12hour": "h:mm:ss aaa"
+      "12hour": "HH:mm:ss aaa"
     },
     "formattedTimestampMonthDayYearHourMinute": {
-      "12hour": "MMM d yyyy, h:mm aaa",
-      "24hour": "MMM d yyyy, HH:mm"
+      "12hour": "d MMM yyyy, HH:mm aaa",
+      "24hour": "d MMM yyyy, HH:mm"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "d MMM, yyyy",
+      "24hour": "d MMM,yyyy"
     }
   },
   "button": {
@@ -125,7 +129,7 @@
   "menu": {
     "configuration": "Configuration",
     "language": {
-      "en": "Anglais (Anglais)",
+      "en": "English (Anglais)",
       "withSystem": {
         "label": "Utiliser les paramètres système pour la langue"
       },
@@ -155,7 +159,10 @@
       "pt": "Português (Portugais)",
       "sk": "Slovenčina (Slovaque)",
       "uk": "Українська (Ukrainien)",
-      "vi": "Tiếng Việt (Vietnamien)"
+      "vi": "Tiếng Việt (Vietnamien)",
+      "yue": "粵語 (Cantonais)",
+      "th": "ไทย (Thai)",
+      "ca": "Català (Catalan)"
     },
     "appearance": "Apparence",
     "darkMode": {
@@ -166,7 +173,7 @@
       },
       "label": "Mode sombre"
     },
-    "review": "Visionner",
+    "review": "Revue d'événements",
     "explore": "Explorer",
     "export": "Exporter",
     "user": {
@@ -192,7 +199,8 @@
       "nord": "Nord",
       "red": "Rouge",
       "default": "Défaut",
-      "label": "Thème"
+      "label": "Thème",
+      "highcontrast": "Contraste élevé"
     },
     "systemMetrics": "Indicateurs systèmes",
     "settings": "Paramètres",
@@ -200,16 +208,16 @@
     "restart": "Redémarrer Frigate",
     "live": {
       "cameras": {
-        "count_one": "{{count}} Caméra",
-        "count_many": "{{count}} Caméras",
-        "count_other": "{{count}} Caméras",
+        "count_one": "{{count}} caméra",
+        "count_many": "{{count}} caméras",
+        "count_other": "{{count}} caméras",
         "title": "Caméras"
       },
       "allCameras": "Toutes les caméras",
       "title": "Direct"
     },
     "uiPlayground": "Gestion de l'interface",
-    "faceLibrary": "Librairie des visages",
+    "faceLibrary": "Bibliothèque de visages",
     "languages": "Langues"
   },
   "toast": {
@@ -226,7 +234,7 @@
     "title": "Rôle",
     "viewer": "Observateur",
     "admin": "Administrateur",
-    "desc": "Les administrateurs accèdent à l'ensemble des fonctionnalités de l'interface Frigate. Les observateurs sont limités à la consultation des caméras, au contrôle des évènements, et à l'historique des enregistrements."
+    "desc": "Les administrateurs accèdent à l'ensemble des fonctionnalités de l'interface Frigate. Les observateurs sont limités à la consultation des caméras, de la revue d'événements, et à l'historique des enregistrements dans l'interface utilisateur."
   },
   "pagination": {
     "next": {
@@ -258,6 +266,10 @@
     "speed": {
       "kph": "km/h",
       "mph": "mph"
+    },
+    "length": {
+      "feet": "pieds",
+      "meters": "mètres"
     }
   }
 }

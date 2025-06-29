@@ -71,12 +71,20 @@
     "formattedTimestampFilename": {
       "12hour": "yy年MM月dd日 ah时mm分ss秒",
       "24hour": "yy年MM月dd日 HH时mm分ss秒"
+    },
+    "formattedTimestampMonthDayYear": {
+      "12hour": "yy年MM月dd日",
+      "24hour": "yy年MM月dd日"
     }
   },
   "unit": {
     "speed": {
       "mph": "英里/小时",
       "kph": "公里/小时"
+    },
+    "length": {
+      "feet": "英尺",
+      "meters": "米"
     }
   },
   "label": {
@@ -170,7 +178,10 @@
       "da": "丹麦语 (Dansk)",
       "sk": "斯拉夫语 (Slovenčina)",
       "ru": "俄语 (Русский)",
-      "cs": "捷克语 (Čeština)"
+      "cs": "捷克语 (Čeština)",
+      "yue": "粤语 (粵語)",
+      "th": "泰语（ไทย）",
+      "ca": "加泰罗尼亚语 (Català )"
     },
     "appearance": "外观",
     "darkMode": {
@@ -189,7 +200,8 @@
       "nord": "Nord",
       "red": "红色",
       "contrast": "高对比度",
-      "default": "默认"
+      "default": "默认",
+      "highcontrast": "高对比"
     },
     "help": "帮助",
     "documentation": {
@@ -205,7 +217,7 @@
       }
     },
     "review": "核查",
-    "explore": "探测",
+    "explore": "浏览",
     "export": "导出",
     "uiPlayground": "UI 演示",
     "faceLibrary": "人脸管理",

@@ -47,7 +47,37 @@
     "untilForRestart": "Доки Frigate не перезавантажиться.",
     "untilRestart": "До перезавантаження",
     "formattedTimestamp": {
-      "12hour": "MMM d, h:mm:ss aaa"
+      "12hour": "MMM d, h:mm:ss aaa",
+      "24hour": "MMM d, HH:mm:ss"
+    },
+    "formattedTimestampHourMinute": {
+      "12hour": "h:mm aaa",
+      "24hour": "HH:mm"
+    },
+    "formattedTimestampHourMinuteSecond": {
+      "12hour": "h:mm:ss aaa",
+      "24hour": "HH:mm:ss"
+    },
+    "formattedTimestampMonthDayHourMinute": {
+      "12hour": "MMM d, h:mm aaa",
+      "24hour": "MMM d, HH:mm"
+    },
+    "formattedTimestampMonthDayYearHourMinute": {
+      "12hour": "MMM d yyyy, h:mm aaa",
+      "24hour": "MMM d yyyy, HH:mm"
+    },
+    "formattedTimestampMonthDay": "MMM d",
+    "formattedTimestampFilename": {
+      "12hour": "MM-dd-yy-h-mm-ss-a",
+      "24hour": "MM-dd-yy-HH-mm-ss"
+    },
+    "formattedTimestamp2": {
+      "12hour": "dd.MM h:mm:ssa",
+      "24hour": "d MMM HH:mm:ss"
+    },
+    "formattedTimestampMonthDayYear": {
+      "24hour": "MMM d, yyyy",
+      "12hour": "MMM d, yyyy"
     }
   },
   "button": {
@@ -119,7 +149,10 @@
       "withSystem": {
         "label": "Використовувати системну мову"
       },
-      "en": "Англійська"
+      "en": "Англійська",
+      "yue": "粵語 (Кантонська)",
+      "th": "ไทย (Тайська)",
+      "ca": "Català (Каталанська)"
     },
     "system": "Система",
     "systemMetrics": "Системна метріка",
@@ -135,7 +168,8 @@
       "default": "Типовий",
       "label": "Тема",
       "blue": "Синій",
-      "green": "Зелений"
+      "green": "Зелений",
+      "highcontrast": "Висока контрастність"
     },
     "help": "Допомогти",
     "documentation": {
@@ -147,7 +181,10 @@
       "title": "Живи",
       "allCameras": "Всi камери",
       "cameras": {
-        "title": "Камери"
+        "title": "Камери",
+        "count_one": "{{count}} Камера",
+        "count_few": "{{count}} Камери",
+        "count_many": "{{count}} Камер"
       }
     },
     "review": "Перегляд",
@@ -178,6 +215,10 @@
     "speed": {
       "mph": "миль/г",
       "kph": "км/г"
+    },
+    "length": {
+      "feet": "ноги",
+      "meters": "метрів"
     }
   },
   "label": {
